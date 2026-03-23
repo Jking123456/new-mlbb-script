@@ -17,7 +17,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     const { duration } = req.body;
-    const newKey = "PRZ-" + Math.random().toString(36).substring(2, 10).toUpperCase();
+    const newKey = "MLBB-" + Math.random().toString(36).substring(2, 10).toUpperCase();
     const seconds = parseInt(duration) * 86400; // Days to seconds
     await redis.set(newKey, "ACTIVE", { ex: seconds });
     return res.status(200).json({ key: newKey });
