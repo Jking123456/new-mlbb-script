@@ -7,23 +7,24 @@ const redis = new Redis({
 
 export default async function handler(req, res) {
   const { key, hwid } = req.query;
+  if (!key || !hwid) return res.status(400).send("MISSING_PARAMS");
+
+  const keyData = await redis.get(key);
+  if (!keyData) return res.status(403).send("INVALID_OR_EXPIRED");
+
+  // Check if this device is already registered for this key
+  const isRegistered = await redis.sismember(`hwids:${key}`, hwid);
   
-  // 1. Check if key exists
-  const keyStatus = await redis.get(key);
-  if (!keyStatus) return res.status(403).send("INVALID_OR_EXPIRED");
-
-  // 2. Check for HWID binding
-  const boundHWID = await redis.get(`hwid:${key}`);
-
-  if (!boundHWID) {
-    // First time using the key? Bind it to this HWID forever.
-    await redis.set(`hwid:${key}`, hwid);
-  } else if (boundHWID !== hwid) {
-    // Key is bound to a DIFFERENT device
-    return res.status(403).send("WRONG_DEVICE");
+  if (!isRegistered) {
+    const currentDevices = await redis.scard(`hwids:${key}`);
+    if (currentDevices >= keyData.limit) {
+      return res.status(403).send("DEVICE_LIMIT_REACHED");
+    }
+    // Register the new device
+    await redis.sadd(`hwids:${key}`, hwid);
   }
 
-  // 3. SUCCESS - Send Script
+  // SUCCESS
   res.setHeader('Content-Type', 'text/plain');
   return res.status(200).send('-- YOUR_LUA_CODE_HERE');
 }
