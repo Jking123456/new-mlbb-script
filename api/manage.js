@@ -23,10 +23,11 @@ export default async function handler(req, res) {
     return res.status(200).json({ key: newKey });
   }
 
-  if (req.method === 'DELETE') {
-    const { key } = req.query;
-    await redis.del(key);
-    return res.status(200).json({ success: true });
-  }
+if (req.method === 'DELETE') {
+  const { key } = req.query;
+  await redis.del(key);
+  await redis.del(`hwid:${key}`);
+  return res.status(200).json({ success: true });
+}
 }
 
