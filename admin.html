@@ -14,50 +14,30 @@
     </style>
 </head>
 <body class="p-4 md:p-8">
-
     <div class="max-w-6xl mx-auto">
         <header class="flex justify-between items-center mb-8 glass p-6 rounded-2xl">
             <div>
-                <h1 class="text-2xl font-bold tracking-tight text-cyan-400">PRINZVAN ULTIMATE</h1>
-                <p class="text-slate-400 text-sm">Key Management System v2.0</p>
+                <h1 class="text-2xl font-bold tracking-tight text-cyan-400 text-uppercase">PRINZVAN ULTIMATE</h1>
+                <p class="text-slate-400 text-sm">Redis Key Management v2.0</p>
             </div>
-            <button onclick="logout()" class="bg-red-500/10 hover:bg-red-500/20 text-red-500 px-4 py-2 rounded-lg transition">
-                <i class="fa-solid fa-power-off mr-2"></i> Logout
-            </button>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
             <div class="lg:col-span-1">
                 <div class="glass p-6 rounded-2xl sticky top-8">
-                    <h2 class="text-xl font-semibold mb-6 flex items-center">
-                        <i class="fa-solid fa-plus-circle mr-3 text-cyan-400"></i> Generate Key
-                    </h2>
-                    
+                    <h2 class="text-xl font-semibold mb-6 flex items-center"><i class="fa-solid fa-plus-circle mr-3 text-cyan-400"></i> Generate Key</h2>
                     <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm text-slate-400 mb-2">Duration</label>
-                            <select id="duration" class="w-full p-3 rounded-xl outline-none">
-                                <option value="1">1 Day (Trial)</option>
-                                <option value="7">7 Days (Weekly)</option>
-                                <option value="30" selected>30 Days (Monthly)</option>
-                                <option value="365">365 Days (Lifetime)</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm text-slate-400 mb-2">Custom Prefix (Optional)</label>
-                            <input type="text" id="prefix" placeholder="e.g. VIP-" class="w-full p-3 rounded-xl outline-none">
-                        </div>
-
-                        <button onclick="generateKey()" class="w-full accent-gradient hover:opacity-90 text-white font-bold py-4 rounded-xl shadow-lg shadow-cyan-500/20 transition-all transform active:scale-95">
-                            GENERATE KEY
-                        </button>
+                        <label class="block text-sm text-slate-400">Duration (Days)</label>
+                        <select id="duration" class="w-full p-3 rounded-xl outline-none">
+                            <option value="1">1 Day</option>
+                            <option value="7">7 Days</option>
+                            <option value="30" selected>30 Days</option>
+                        </select>
+                        <button onclick="generateKey()" class="w-full accent-gradient hover:opacity-90 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95">GENERATE KEY</button>
                     </div>
-
-                    <div id="resultBox" class="mt-6 hidden animate-bounce">
+                    <div id="resultBox" class="mt-6 hidden">
                         <div class="bg-cyan-500/10 border border-cyan-500/50 p-4 rounded-xl text-center">
-                            <p class="text-xs text-cyan-400 uppercase font-bold mb-1">New Key Created</p>
+                            <p class="text-xs text-cyan-400 font-bold mb-1">NEW KEY</p>
                             <code id="newKeyDisplay" class="text-lg font-mono text-white select-all">--------</code>
                         </div>
                     </div>
@@ -65,30 +45,15 @@
             </div>
 
             <div class="lg:col-span-2">
-                <div class="glass p-6 rounded-2xl min-h-[500px]">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-xl font-semibold">Active Keys</h2>
-                        <span id="keyCount" class="bg-slate-700 px-3 py-1 rounded-full text-xs text-slate-300">0 Keys Total</span>
-                    </div>
-
+                <div class="glass p-6 rounded-2xl min-h-[400px]">
+                    <h2 class="text-xl font-semibold mb-6">Active Keys in Redis</h2>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left">
+                        <table class="w-full text-left text-sm">
                             <thead>
-                                <tr class="text-slate-500 border-b border-slate-700 text-sm">
-                                    <th class="pb-4 font-medium">Key String</th>
-                                    <th class="pb-4 font-medium">Expiry</th>
-                                    <th class="pb-4 font-medium">Status</th>
-                                    <th class="pb-4 font-medium text-right">Action</th>
-                                </tr>
+                                <tr class="text-slate-500 border-b border-slate-700"><th class="pb-4">Key</th><th class="pb-4">Expires In</th><th class="pb-4 text-right">Action</th></tr>
                             </thead>
-                            <tbody id="keyTableBody" class="text-sm">
-                                </tbody>
+                            <tbody id="keyTableBody"></tbody>
                         </table>
-                    </div>
-                    
-                    <div id="emptyState" class="text-center py-20 text-slate-500">
-                        <i class="fa-solid fa-key text-4xl mb-4 opacity-20"></i>
-                        <p>No keys generated yet.</p>
                     </div>
                 </div>
             </div>
@@ -96,86 +61,40 @@
     </div>
 
     <script>
-        // Store keys in LocalStorage for this demo (Replace with API calls later)
-        let keys = JSON.parse(localStorage.getItem('prinzvan_keys')) || [];
-
-        function renderKeys() {
+        async function fetchKeys() {
+            const res = await fetch('/api/manage');
+            const data = await res.json();
             const tbody = document.getElementById('keyTableBody');
-            const emptyState = document.getElementById('emptyState');
-            tbody.innerHTML = '';
-            
-            if (keys.length === 0) {
-                emptyState.classList.remove('hidden');
-            } else {
-                emptyState.classList.add('hidden');
-                keys.forEach((k, index) => {
-                    const row = `
-                        <tr class="border-b border-slate-800/50 hover:bg-white/5 transition">
-                            <td class="py-4 font-mono text-cyan-200">${k.key}</td>
-                            <td class="py-4 text-slate-400">${k.expiry}</td>
-                            <td class="py-4">
-                                <span class="px-2 py-1 rounded-md text-[10px] font-bold ${k.status === 'Active' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}">
-                                    ${k.status.toUpperCase()}
-                                </span>
-                            </td>
-                            <td class="py-4 text-right">
-                                <button onclick="deleteKey(${index})" class="text-slate-500 hover:text-red-500 transition">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                    tbody.innerHTML += row;
-                });
-            }
-            document.getElementById('keyCount').innerText = `${keys.length} Keys Total`;
+            tbody.innerHTML = data.keys.map(k => `
+                <tr class="border-b border-slate-800/50">
+                    <td class="py-4 font-mono text-cyan-200">${k.key}</td>
+                    <td class="py-4 text-slate-400">${Math.round(k.expiry / 3600)} Hours</td>
+                    <td class="py-4 text-right">
+                        <button onclick="deleteKey('${k.key}')" class="text-red-500 hover:text-red-400"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
         }
 
-        function generateKey() {
-            const prefix = document.getElementById('prefix').value || "";
+        async function generateKey() {
             const duration = document.getElementById('duration').value;
-            
-            // Generate a random 16-char string
-            const randomStr = Math.random().toString(36).substring(2, 10).toUpperCase() + 
-                              Math.random().toString(36).substring(2, 10).toUpperCase();
-            
-            const newKey = prefix + randomStr;
-            
-            // Calculate Expiry
-            const expiryDate = new Date();
-            expiryDate.setDate(expiryDate.getDate() + parseInt(duration));
-            
-            const keyData = {
-                key: newKey,
-                expiry: expiryDate.toLocaleDateString(),
-                status: 'Active'
-            };
-
-            keys.unshift(keyData); // Add to start of array
-            localStorage.setItem('prinzvan_keys', JSON.stringify(keys));
-            
-            // Show UI updates
-            document.getElementById('newKeyDisplay').innerText = newKey;
+            const res = await fetch('/api/manage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ duration })
+            });
+            const data = await res.json();
+            document.getElementById('newKeyDisplay').innerText = data.key;
             document.getElementById('resultBox').classList.remove('hidden');
-            renderKeys();
+            fetchKeys();
         }
 
-        function deleteKey(index) {
-            if(confirm("Are you sure you want to delete this key? Access will be revoked immediately.")) {
-                keys.splice(index, 1);
-                localStorage.setItem('prinzvan_keys', JSON.stringify(keys));
-                renderKeys();
-            }
+        async function deleteKey(key) {
+            if(!confirm("Delete key?")) return;
+            await fetch(\`/api/manage?key=\${key}\`, { method: 'DELETE' });
+            fetchKeys();
         }
-
-        function logout() {
-            alert("Logging out...");
-            // Redirect or clear session logic
-        }
-
-        // Initial Load
-        renderKeys();
+        fetchKeys();
     </script>
 </body>
 </html>
-
