@@ -23,7 +23,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     const { duration, limit } = req.body;
-    const newKey = "MLBB-" + Math.random().toString(36).substring(2, 10).toUpperCase();
+    const newKey = "PRZ-" + Math.random().toString(36).substring(2, 10).toUpperCase();
     const seconds = parseInt(duration) * 86400;
     
     // Store the limit inside the key's data
