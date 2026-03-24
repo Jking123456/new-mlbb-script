@@ -6,12 +6,11 @@ const redis = new Redis({
 })
 
 export default async function handler(req, res) {
-  // 🔒 SECURITY CHECK: Compare header with Vercel Env Variable
   const authHeader = req.headers['x-admin-secret'];
   const SECRET = process.env.ADMIN_SECRET;
 
   if (!authHeader || authHeader !== SECRET) {
-    return res.status(401).json({ error: "Access Denied: Invalid Secret" });
+    return res.status(401).json({ error: "Access Denied" });
   }
 
   if (req.method === 'GET') {
@@ -22,7 +21,8 @@ export default async function handler(req, res) {
       return {
         key: k,
         expiry: await redis.ttl(k),
-        limit: (data && data.limit) ? data.limit : 1,
+        limit: data?.limit || 1,
+        isPremium: data?.isPremium ?? false, // Default to false if missing
         used: hwids.length
       };
     }));
@@ -34,8 +34,26 @@ export default async function handler(req, res) {
     const newKey = "PRZ-" + Math.random().toString(36).substring(2, 10).toUpperCase();
     const seconds = parseInt(duration) * 86400;
     
-    await redis.set(newKey, { limit: parseInt(limit) || 1 }, { ex: seconds });
+    // New keys start as Non-Premium (false)
+    await redis.set(newKey, { 
+        limit: parseInt(limit) || 1, 
+        isPremium: false 
+    }, { ex: seconds });
+    
     return res.status(200).json({ key: newKey });
+  }
+
+  // NEW: Toggle Premium Status
+  if (req.method === 'PATCH') {
+    const { key } = req.body;
+    const data = await redis.get(key);
+    if (!data) return res.status(404).send("NOT_FOUND");
+    
+    const ttl = await redis.ttl(key);
+    data.isPremium = !data.isPremium; // Flip the status
+    
+    await redis.set(key, data, { ex: ttl });
+    return res.status(200).json({ success: true, isPremium: data.isPremium });
   }
 
   if (req.method === 'DELETE') {
