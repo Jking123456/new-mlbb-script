@@ -11,8 +11,7 @@
         .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
         .accent-gradient { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); transition: all 0.3s ease; }
         .accent-gradient:hover { box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); transform: translateY(-1px); }
-        input { background: #1e293b !important; border: 1px solid #334155 !important; color: white !important; }
-        input:focus { border-color: #3b82f6 !important; outline: none; }
+        input, select { background: #1e293b !important; border: 1px solid #334155 !important; color: white !important; }
     </style>
 </head>
 <body class="flex items-center justify-center">
@@ -24,163 +23,112 @@
                     <i class="fa-solid fa-shield-halved text-2xl text-blue-500"></i>
                 </div>
                 <h1 class="text-3xl font-bold text-white text-center">Admin Panel</h1>
-                <p class="text-slate-400 mt-2">Sign in to access the dashboard</p>
             </div>
-
             <div class="space-y-6">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-2 ml-1">Username</label>
-                    <div class="relative">
-                        <i class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                        <input type="text" id="adminUser" placeholder="Enter username" class="w-full pl-11 pr-4 py-3 rounded-xl">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-2 ml-1">Password</label>
-                    <div class="relative">
-                        <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                        <input type="password" id="adminPass" placeholder="••••••••" class="w-full pl-11 pr-4 py-3 rounded-xl">
-                    </div>
-                </div>
-                <button onclick="attemptLogin()" id="loginBtn" class="w-full accent-gradient text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95">
-                    Sign In
-                </button>
+                <input type="text" id="adminUser" placeholder="Username" class="w-full px-4 py-3 rounded-xl">
+                <input type="password" id="adminPass" placeholder="Password" class="w-full px-4 py-3 rounded-xl">
+                <button onclick="attemptLogin()" id="loginBtn" class="w-full accent-gradient text-white font-bold py-4 rounded-xl">Sign In</button>
             </div>
-            <p class="text-center text-xs text-slate-600 mt-8">Protected area · Unauthorized access prohibited</p>
         </div>
     </div>
 
     <div id="dashboardSection" class="hidden w-full max-w-6xl mx-auto p-4 md:p-8 self-start">
         <header class="flex justify-between items-center mb-8 glass p-6 rounded-2xl">
-            <div>
-                <h1 class="text-2xl font-bold tracking-tight text-blue-500 uppercase">PRINZVAN ULTIMATE</h1>
-                <p class="text-slate-400 text-sm">License Management System</p>
-            </div>
-            <button onclick="location.reload()" class="bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-500 px-4 py-2 rounded-xl transition-all">
-                <i class="fa-solid fa-power-off"></i>
-            </button>
+            <h1 class="text-2xl font-bold text-blue-500">PRINZVAN DASHBOARD</h1>
+            <button onclick="location.reload()" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-power-off"></i></button>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="lg:col-span-1">
-                <div class="glass p-6 rounded-2xl sticky top-8">
-                    <h2 class="text-xl font-semibold mb-6 flex items-center text-white"><i class="fa-solid fa-plus-circle mr-3 text-blue-500"></i> Create Key</h2>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-xs text-slate-500 uppercase mb-2">Duration</label>
-                            <select id="duration" class="w-full p-3 rounded-xl outline-none bg-slate-800 border border-slate-700 text-white">
-                                <option value="1">1 Day</option>
-                                <option value="7">7 Days</option>
-                                <option value="30" selected>30 Days</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs text-slate-500 uppercase mb-2">Max Devices</label>
-                            <input type="number" id="deviceLimit" value="1" min="1" class="w-full p-3 rounded-xl outline-none">
-                        </div>
-                        <button onclick="generateKey()" class="w-full accent-gradient text-white font-bold py-4 rounded-xl shadow-lg">GENERATE KEY</button>
-                    </div>
-                    <div id="resultBox" class="mt-6 hidden">
-                        <div class="bg-blue-500/10 border border-blue-500/30 p-4 rounded-xl text-center">
-                            <p class="text-xs text-blue-400 font-bold mb-1 uppercase tracking-widest">Success</p>
-                            <code id="newKeyDisplay" onclick="copyKey()" class="text-lg font-mono text-white cursor-pointer hover:text-blue-400 transition">--------</code>
-                        </div>
-                    </div>
+            <div class="glass p-6 rounded-2xl h-fit">
+                <h2 class="text-xl font-semibold mb-6 text-white">Create Key</h2>
+                <div class="space-y-4">
+                    <select id="duration" class="w-full p-3 rounded-xl">
+                        <option value="1">1 Day</option>
+                        <option value="7">7 Days</option>
+                        <option value="30" selected>30 Days</option>
+                    </select>
+                    <input type="number" id="deviceLimit" value="1" class="w-full p-3 rounded-xl">
+                    <button onclick="generateKey()" class="w-full accent-gradient py-4 rounded-xl font-bold">GENERATE</button>
+                </div>
+                <div id="resultBox" class="mt-6 hidden bg-blue-500/10 p-4 rounded-xl text-center border border-blue-500/30">
+                    <code id="newKeyDisplay" onclick="copyKey()" class="text-lg font-mono text-white cursor-pointer">--------</code>
                 </div>
             </div>
 
-            <div class="lg:col-span-2">
-                <div class="glass p-6 rounded-2xl min-h-[500px]">
-                    <h2 class="text-xl font-semibold mb-6 text-white">Active Licenses</h2>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm">
-                            <thead>
-                                <tr class="text-slate-500 border-b border-slate-800">
-                                    <th class="pb-4">Key String</th>
-                                    <th class="pb-4">Usage</th>
-                                    <th class="pb-4">TTL</th>
-                                    <th class="pb-4 text-right">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="keyTableBody"></tbody>
-                        </table>
-                    </div>
-                </div>
+            <div class="lg:col-span-2 glass p-6 rounded-2xl min-h-[500px]">
+                <table class="w-full text-left text-sm">
+                    <thead>
+                        <tr class="text-slate-500 border-b border-slate-800">
+                            <th class="pb-4">Key</th>
+                            <th class="pb-4">Usage</th>
+                            <th class="pb-4">Status</th>
+                            <th class="pb-4 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="keyTableBody"></tbody>
+                </table>
             </div>
         </div>
     </div>
 
     <script>
-        let adminSecret = ""; // Hidden token loaded on login
+        let adminSecret = "";
 
         async function attemptLogin() {
             const user = document.getElementById('adminUser').value;
             const pass = document.getElementById('adminPass').value;
-            const btn = document.getElementById('loginBtn');
-            
-            btn.innerText = "Authenticating...";
-            
-            try {
-                const res = await fetch('/api/admin', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user, pass })
-                });
-
-                if (res.ok) {
-                    const data = await res.json();
-                    adminSecret = data.secret; // Secret key for API headers
-                    
-                    document.getElementById('loginSection').classList.add('hidden');
-                    document.getElementById('dashboardSection').classList.remove('hidden');
-                    document.body.classList.remove('flex', 'items-center', 'justify-center');
-                    fetchKeys();
-                } else {
-                    alert("Unauthorized: Incorrect credentials.");
-                    btn.innerText = "Sign In";
-                }
-            } catch (e) {
-                alert("Connection Error");
-                btn.innerText = "Sign In";
-            }
+            const res = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user, pass })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                adminSecret = data.secret;
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('dashboardSection').classList.remove('hidden');
+                document.body.classList.remove('flex', 'items-center', 'justify-center');
+                fetchKeys();
+            } else { alert("Login Failed"); }
         }
 
         async function fetchKeys() {
-            try {
-                const res = await fetch('/api/manage', {
-                    headers: { 'x-admin-secret': adminSecret }
-                });
-                const data = await res.json();
-                const tbody = document.getElementById('keyTableBody');
-                
-                if (data.keys) {
-                    tbody.innerHTML = data.keys.map(k => `
-                        <tr class="border-b border-slate-800/50 hover:bg-white/5 transition">
-                            <td class="py-4 font-mono text-blue-300 font-semibold">${k.key}</td>
-                            <td class="py-4 text-slate-300">${k.used} / ${k.limit}</td>
-                            <td class="py-4 text-slate-500">${Math.round(k.expiry / 3600)}h left</td>
-                            <td class="py-4 text-right">
-                                <button onclick="deleteKey('${k.key}')" class="text-red-500 hover:text-red-400 p-2 transition"><i class="fa-solid fa-trash-can"></i></button>
-                            </td>
-                        </tr>
-                    `).join('');
-                }
-            } catch (e) { console.error("Sync failed"); }
+            const res = await fetch('/api/manage', { headers: { 'x-admin-secret': adminSecret } });
+            const data = await res.json();
+            const tbody = document.getElementById('keyTableBody');
+            tbody.innerHTML = data.keys.map(k => `
+                <tr class="border-b border-slate-800/50 hover:bg-white/5 transition">
+                    <td class="py-4 font-mono text-blue-300">${k.key}</td>
+                    <td class="py-4 text-slate-300">${k.used}/${k.limit}</td>
+                    <td class="py-4">
+                        <button onclick="togglePremium('${k.key}')" class="px-3 py-1 rounded-lg text-xs font-bold ${k.isPremium ? 'bg-green-500/20 text-green-400 border border-green-500/50' : 'bg-amber-500/20 text-amber-400 border border-amber-500/50'}">
+                            ${k.isPremium ? 'PREMIUM' : 'PENDING'}
+                        </button>
+                    </td>
+                    <td class="py-4 text-right">
+                        <button onclick="deleteKey('${k.key}')" class="text-red-500"><i class="fa-solid fa-trash-can"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function togglePremium(key) {
+            await fetch('/api/manage', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
+                body: JSON.stringify({ key })
+            });
+            fetchKeys();
         }
 
         async function generateKey() {
             const duration = document.getElementById('duration').value;
             const limit = document.getElementById('deviceLimit').value;
-            
             const res = await fetch('/api/manage', {
                 method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'x-admin-secret': adminSecret 
-                },
+                headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
                 body: JSON.stringify({ duration, limit })
             });
-
             const data = await res.json();
             if (data.key) {
                 document.getElementById('newKeyDisplay').innerText = data.key;
@@ -190,18 +138,14 @@
         }
 
         async function deleteKey(key) {
-            if(!confirm("Are you sure? This will kick the user and clear HWID.")) return;
-            await fetch('/api/manage?key=' + key, { 
-                method: 'DELETE',
-                headers: { 'x-admin-secret': adminSecret }
-            });
+            if(!confirm("Delete key?")) return;
+            await fetch('/api/manage?key=' + key, { method: 'DELETE', headers: { 'x-admin-secret': adminSecret } });
             fetchKeys();
         }
 
         function copyKey() {
-            const text = document.getElementById('newKeyDisplay').innerText;
-            navigator.clipboard.writeText(text);
-            alert("Copied to clipboard!");
+            navigator.clipboard.writeText(document.getElementById('newKeyDisplay').innerText);
+            alert("Copied!");
         }
     </script>
 </body>
