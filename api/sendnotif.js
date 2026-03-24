@@ -10,10 +10,12 @@ export default async function handler(req, res) {
 
   try {
     const notification = await redis.get('global_script_notif');
-    return res.status(200).json({ 
-      message: notification || "" // Returns empty if no message is set
-    });
+    
+    // Set content type to plain text and return just the message string
+    res.setHeader('Content-Type', 'text/plain');
+    return res.status(200).send(notification || "No active notifications.");
   } catch (error) {
-    return res.status(500).json({ message: "" });
+    res.setHeader('Content-Type', 'text/plain');
+    return res.status(500).send("Server Error");
   }
 }
