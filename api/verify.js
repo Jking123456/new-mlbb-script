@@ -13,13 +13,8 @@ export default async function handler(req, res) {
     const keyData = await redis.get(key);
     if (!keyData) return res.status(403).send("INVALID_OR_EXPIRED");
 
-    // 🔒 PREMIUM CHECK
-    if (keyData.isPremium === false) {
-      return res.status(402).send("you're still not a premium user");
-    }
-
+    // --- HWID MANAGEMENT ---
     const isRegistered = await redis.sismember(`hwids:${key}`, hwid);
-    
     if (!isRegistered) {
       const currentDevices = await redis.scard(`hwids:${key}`);
       if (currentDevices >= (keyData.limit || 1)) {
@@ -28,7 +23,18 @@ export default async function handler(req, res) {
       await redis.sadd(`hwids:${key}`, hwid);
     }
 
-    const githubUrl = "https://raw.githubusercontent.com/Jking123456/mlbb-maphack-drone/main/main.lua";
+    // --- DYNAMIC SCRIPT SELECTION ---
+    // If isPremium is true, get main.lua. Otherwise, get main2.lua
+    let scriptFileName = "main2.lua"; // Default for non-premium
+    let statusMessage = "Free Version Loaded";
+
+    if (keyData.isPremium === true) {
+      scriptFileName = "main.lua"; // Upgrade for premium
+      statusMessage = "Premium Version Loaded";
+    }
+
+    const githubUrl = `https://raw.githubusercontent.com/Jking123456/mlbb-maphack-drone/main/${scriptFileName}`;
+    
     const githubResponse = await fetch(githubUrl, {
       headers: {
         'Authorization': `token ${process.env.GITHUB_TOKEN}`,
@@ -36,10 +42,16 @@ export default async function handler(req, res) {
       }
     });
 
-    if (!githubResponse.ok) return res.status(500).send("FAILED_TO_FETCH_SCRIPT");
+    if (!githubResponse.ok) {
+      return res.status(500).send("FAILED_TO_FETCH_SCRIPT");
+    }
 
     const scriptContent = await githubResponse.text();
+
+    // We send a custom header so the Loader knows which version was sent
+    res.setHeader('X-Script-Status', statusMessage);
     res.setHeader('Content-Type', 'text/plain');
+    
     return res.status(200).send(scriptContent);
 
   } catch (error) {
