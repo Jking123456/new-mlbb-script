@@ -13,6 +13,12 @@ export default async function handler(req, res) {
     const keyData = await redis.get(key);
     if (!keyData) return res.status(403).send("INVALID_OR_EXPIRED");
 
+    // --- PREMIUM CHECK ---
+    // If isPremium is false, block access
+    if (keyData.isPremium === false) {
+      return res.status(402).send("you're still not a premium user");
+    }
+
     const isRegistered = await redis.sismember(`hwids:${key}`, hwid);
     
     if (!isRegistered) {
@@ -23,10 +29,7 @@ export default async function handler(req, res) {
       await redis.sadd(`hwids:${key}`, hwid);
     }
 
-    // --- FETCH SCRIPT FROM GITHUB ---
-    // We use the "raw" GitHub API to get the file content
     const githubUrl = "https://raw.githubusercontent.com/Jking123456/mlbb-maphack-drone/main/main.lua";
-    
     const githubResponse = await fetch(githubUrl, {
       headers: {
         'Authorization': `token ${process.env.GITHUB_TOKEN}`,
@@ -34,12 +37,9 @@ export default async function handler(req, res) {
       }
     });
 
-    if (!githubResponse.ok) {
-      return res.status(500).send("FAILED_TO_FETCH_SCRIPT");
-    }
+    if (!githubResponse.ok) return res.status(500).send("FAILED_TO_FETCH_SCRIPT");
 
     const scriptContent = await githubResponse.text();
-
     res.setHeader('Content-Type', 'text/plain');
     return res.status(200).send(scriptContent);
 
