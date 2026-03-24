@@ -123,7 +123,13 @@
             </div>
 
             <div class="lg:col-span-2 glass p-8 rounded-[24px] min-h-[500px]">
-                <h2 class="text-lg font-bold mb-6 text-white">Active Licenses</h2>
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-lg font-bold text-white">Active Licenses</h2>
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="broadcastMsg" placeholder="Global Message..." class="px-3 py-1.5 rounded-lg text-[11px] outline-none w-40 md:w-56">
+                        <button onclick="sendGlobalNotif()" class="btn-primary px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider">Send</button>
+                    </div>
+                </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm" style="min-width: 600px;">
                         <thead>
@@ -238,6 +244,16 @@
             if(!confirm("Are you sure? This will revoke access for this key.")) return;
             await fetch('/api/manage?key=' + key, { method: 'DELETE', headers: { 'x-admin-secret': adminSecret } });
             fetchKeys();
+        }
+
+        async function sendGlobalNotif() {
+            const msg = document.getElementById('broadcastMsg').value;
+            const res = await fetch('/api/manage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
+                body: JSON.stringify({ action: 'broadcast', message: msg })
+            });
+            if (res.ok) alert("Broadcast Updated!");
         }
 
         function copyKey() {
