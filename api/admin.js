@@ -3,17 +3,18 @@ export default function handler(req, res) {
 
   const { user, pass } = req.body;
 
-  // These come from your Vercel Project Settings > Environment Variables
+  // Environment Variables from Vercel
   const MASTER_USER = process.env.ADMIN_USER;
   const MASTER_PASS = process.env.ADMIN_PASS;
+  const MASTER_SECRET = process.env.ADMIN_SECRET;
 
   if (user === MASTER_USER && pass === MASTER_PASS) {
+    // We send the secret back so the HTML can use it for /api/manage requests
     return res.status(200).json({ 
       success: true, 
-      token: "SECURE_SESSION_" + Date.now() // You can use this to gate /api/manage later
+      secret: MASTER_SECRET 
     });
   } else {
-    return res.status(401).json({ success: false, message: "Unauthorized" });
+    return res.status(401).json({ success: false, message: "Invalid Credentials" });
   }
 }
-
