@@ -3,167 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard | Prinzvan Ultimate</title>
+    <title>PRINZVAN | Admin Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #020617; }
-        .glass { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); }
-        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body { background-color: #0b0f1a; color: #f8fafc; font-family: 'Inter', sans-serif; min-height: 100vh; }
+        .glass { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        
+        .input-group { position: relative; width: 100%; }
+        .input-group i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 14px; }
+        input, select { 
+            background: #161d2f !important; 
+            border: 1px solid #2d3748 !important; 
+            color: white !important; 
+            transition: all 0.2s ease;
+        }
+        input:focus { border-color: #3b82f6 !important; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1); outline: none; }
+        
+        .btn-primary { 
+            background: #2563eb; 
+            box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.39);
+            transition: all 0.2s ease;
+        }
+        .btn-primary:hover { background: #1d4ed8; transform: translateY(-1px); }
+        .btn-primary:active { transform: translateY(0); }
+
+        .status-badge { font-size: 10px; font-weight: 700; letter-spacing: 0.05em; white-space: nowrap; }
+        
+        /* Scrollbar styling for a cleaner look */
+        .overflow-x-auto::-webkit-scrollbar { height: 4px; }
+        .overflow-x-auto::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 10px; }
     </style>
 </head>
-<body class="min-h-screen text-slate-300 font-sans selection:bg-blue-500/30">
+<body class="flex items-center justify-center">
 
-    <div class="max-w-4xl mx-auto px-4 py-8 md:py-12 space-y-8">
-        
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-2xl font-bold text-white tracking-tight">Dashboard</h1>
-                <p class="text-xs text-slate-500 mt-1">Manage your license keys and system status</p>
-            </div>
-            <button onclick="logout()" class="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors">
-                <i class="fas fa-sign-out-alt"></i>
-            </button>
-        </div>
-
-        <div class="glass border border-slate-800/50 rounded-3xl p-6 md:p-8 shadow-2xl">
-            <div class="flex items-center gap-3 mb-6">
-                <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500">
-                    <i class="fas fa-key"></i>
+    <div id="loginSection" class="w-full max-w-md p-6">
+        <div class="glass rounded-[32px] p-10 shadow-2xl border border-white/5">
+            <div class="flex flex-col items-center mb-10">
+                <div class="w-16 h-16 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center justify-center mb-6">
+                    <i class="fa-solid fa-shield-halved text-2xl text-blue-500"></i>
                 </div>
-                <h2 class="text-lg font-semibold text-white">Generate License</h2>
+                <h1 class="text-3xl font-bold text-white mb-2">Admin Panel</h1>
+                <p class="text-slate-400 text-sm">Sign in to access the dashboard</p>
             </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+
+            <div class="space-y-6">
                 <div class="space-y-2">
-                    <label class="text-[10px] uppercase font-bold text-slate-500 ml-1">Duration (Days)</label>
-                    <input type="number" id="duration" placeholder="e.g. 30" 
-                           class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500/50 transition-all">
-                </div>
-                <div class="space-y-2">
-                    <label class="text-[10px] uppercase font-bold text-slate-500 ml-1">Device Limit</label>
-                    <input type="number" id="limit" value="1" 
-                           class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500/50 transition-all">
-                </div>
-            </div>
-            
-            <button onclick="generateKey()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-blue-500/20 transition-all active:scale-[0.98]">
-                Generate License Key
-            </button>
-        </div>
-
-        <div class="glass border border-slate-800/50 rounded-3xl p-6 md:p-8 shadow-2xl">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-500">
-                        <i class="fas fa-users"></i>
+                    <label class="text-xs font-semibold text-slate-500 uppercase ml-1">Username</label>
+                    <div class="input-group">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" id="adminUser" placeholder="Enter your username" class="w-full pl-12 pr-4 py-3.5 rounded-xl text-sm">
                     </div>
-                    <h2 class="text-lg font-semibold text-white">Active Licenses</h2>
+                </div>
+                
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <label class="text-xs font-semibold text-slate-500 uppercase ml-1">Password</label>
+                        <a href="#" class="text-xs text-blue-500 hover:underline">Forgot password?</a>
+                    </div>
+                    <div class="input-group">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="adminPass" placeholder="••••••••" class="w-full pl-12 pr-12 py-3.5 rounded-xl text-sm">
+                        <i class="fa-solid fa-eye absolute right-4 left-auto cursor-pointer hover:text-white transition"></i>
+                    </div>
                 </div>
 
-                <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 p-1.5 rounded-xl">
-                    <input id="globalMsg" type="text" placeholder="Global Notification..." 
-                           class="bg-transparent border-none px-3 py-1 text-xs text-white outline-none w-40 md:w-56">
-                    <button onclick="sendGlobalNotif()" class="bg-slate-800 hover:bg-blue-600 text-white px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all uppercase tracking-wider">
-                        Send
-                    </button>
+                <div class="flex items-center gap-2 ml-1">
+                    <input type="checkbox" id="remember" class="w-4 h-4 rounded border-slate-700 bg-slate-800 text-blue-600 focus:ring-blue-500">
+                    <label for="remember" class="text-sm text-slate-400">Keep me signed in</label>
+                </div>
+
+                <button onclick="attemptLogin()" id="loginBtn" class="w-full btn-primary text-white font-bold py-4 rounded-xl text-md mt-2">
+                    Sign In
+                </button>
+            </div>
+            
+            <p class="text-center text-[11px] text-slate-600 mt-10 uppercase tracking-widest">Protected area • Unauthorized access prohibited</p>
+        </div>
+    </div>
+
+    <div id="dashboardSection" class="hidden w-full max-w-6xl mx-auto p-4 md:p-8 self-start mt-10">
+        <header class="flex justify-between items-center mb-8 glass p-6 rounded-[24px]">
+            <div>
+                <h1 class="text-xl font-bold text-white tracking-tight">PRINZVAN <span class="text-blue-500">DASHBOARD</span></h1>
+                <p class="text-slate-500 text-xs">License Management System v2.0</p>
+            </div>
+            <button onclick="location.reload()" class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-800/50 hover:bg-red-500/20 text-slate-400 hover:text-red-500 transition-all">
+                <i class="fa-solid fa-power-off"></i>
+            </button>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="glass p-8 rounded-[24px] h-fit">
+                <h2 class="text-lg font-bold mb-6 text-white flex items-center gap-2">
+                    <i class="fa-solid fa-plus-circle text-blue-500"></i> Create Key
+                </h2>
+                <div class="space-y-5">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">Key Duration</label>
+                        <select id="duration" class="w-full p-3.5 rounded-xl text-sm outline-none">
+                            <option value="1">1 Day Access</option>
+                            <option value="7">7 Days Access</option>
+                            <option value="30" selected>30 Days (Standard)</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">Device Limit</label>
+                        <input type="number" id="deviceLimit" value="1" class="w-full p-3.5 rounded-xl text-sm outline-none">
+                    </div>
+                    <button onclick="generateKey()" class="w-full btn-primary py-4 rounded-xl font-bold text-sm">GENERATE LICENSE</button>
+                </div>
+                
+                <div id="resultBox" class="mt-6 hidden bg-blue-500/5 border border-blue-500/20 p-4 rounded-2xl text-center">
+                    <p class="text-[10px] font-bold text-blue-400 uppercase mb-2">New Key Generated</p>
+                    <code id="newKeyDisplay" onclick="copyKey()" class="text-lg font-mono text-white cursor-pointer hover:text-blue-400 transition select-all">--------</code>
                 </div>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead>
-                        <tr class="text-slate-500 border-b border-slate-800">
-                            <th class="pb-4 font-semibold uppercase text-[10px]">Key String</th>
-                            <th class="pb-4 font-semibold uppercase text-[10px]">Usage</th>
-                            <th class="pb-4 font-semibold uppercase text-[10px]">Account Status</th>
-                            <th class="pb-4 text-right font-semibold uppercase text-[10px]">Manage</th>
-                        </tr>
-                    </thead>
-                    <tbody id="keyList" class="divide-y divide-slate-800/50">
-                        </tbody>
-                </table>
+            <div class="lg:col-span-2 glass p-8 rounded-[24px] min-h-[500px]">
+                <h2 class="text-lg font-bold mb-6 text-white">Active Licenses</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm" style="min-width: 600px;">
+                        <thead>
+                            <tr class="text-slate-500 border-b border-slate-800">
+                                <th class="pb-4 font-semibold uppercase text-[10px]">Key String</th>
+                                <th class="pb-4 font-semibold uppercase text-[10px]">Usage</th>
+                                <th class="pb-4 font-semibold uppercase text-[10px]">Remaining</th>
+                                <th class="pb-4 font-semibold uppercase text-[10px]">Account Status</th>
+                                <th class="pb-4 text-right font-semibold uppercase text-[10px]">Manage</th>
+                            </tr>
+                        </thead>
+                        <tbody id="keyTableBody"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        const API_BASE = '/api/manage';
-        const secret = localStorage.getItem('admin_secret');
+        let adminSecret = "";
 
-        if (!secret) window.location.href = '/login.html';
+        // Helper to convert seconds to readable time
+        function formatTime(seconds) {
+            if (seconds <= 0) return "Expired";
+            const days = Math.floor(seconds / 86400);
+            const hours = Math.floor((seconds % 86400) / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            
+            if (days > 0) return `${days}d ${hours}h`;
+            if (hours > 0) return `${hours}h ${minutes}m`;
+            return `${minutes}m`;
+        }
+
+        async function attemptLogin() {
+            const user = document.getElementById('adminUser').value;
+            const pass = document.getElementById('adminPass').value;
+            const btn = document.getElementById('loginBtn');
+            
+            if(!user || !pass) return alert("Fill all fields");
+            btn.innerText = "Authenticating...";
+
+            const res = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user, pass })
+            });
+            
+            if (res.ok) {
+                const data = await res.json();
+                adminSecret = data.secret;
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('dashboardSection').classList.remove('hidden');
+                document.body.classList.remove('flex', 'items-center', 'justify-center');
+                fetchKeys();
+            } else { 
+                alert("Login Failed: Invalid credentials"); 
+                btn.innerText = "Sign In";
+            }
+        }
 
         async function fetchKeys() {
-            const res = await fetch(API_BASE, { headers: { 'x-admin-secret': secret } });
-            if (res.status === 401) logout();
+            const res = await fetch('/api/manage', { headers: { 'x-admin-secret': adminSecret } });
             const data = await res.json();
-            const list = document.getElementById('keyList');
-            list.innerHTML = data.keys.map(k => `
-                <tr class="group hover:bg-slate-800/20 transition-colors">
-                    <td class="py-4 font-mono text-xs text-blue-400 font-medium">${k.key}</td>
-                    <td class="py-4 text-xs text-slate-400">${k.used} / ${k.limit}</td>
-                    <td class="py-4">
-                        <span onclick="togglePremium('${k.key}')" class="cursor-pointer px-2 py-1 rounded-full text-[9px] font-bold ${k.isPremium ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-slate-800 text-slate-500'}">
-                            ${k.isPremium ? '★ PREMIUM' : 'PENDING'}
-                        </span>
+            const tbody = document.getElementById('keyTableBody');
+            
+            tbody.innerHTML = data.keys.map(k => `
+                <tr class="border-b border-white/5 hover:bg-white/[0.02] transition">
+                    <td class="py-5 font-mono text-blue-400 font-medium">${k.key}</td>
+                    <td class="py-5 text-slate-300">${k.used} <span class="text-slate-600">/</span> ${k.limit}</td>
+                    <td class="py-5 text-slate-400 text-xs font-medium">${formatTime(k.expiry)}</td>
+                    <td class="py-5">
+                        <button onclick="togglePremium('${k.key}')" class="status-badge px-3 py-1.5 rounded-full border transition-all ${k.isPremium ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'}">
+                            <i class="fa-solid ${k.isPremium ? 'fa-crown' : 'fa-clock'} mr-1.5"></i>
+                            ${k.isPremium ? 'PREMIUM' : 'PENDING'}
+                        </button>
                     </td>
-                    <td class="py-4 text-right">
-                        <button onclick="deleteKey('${k.key}')" class="text-slate-600 hover:text-red-500 transition-colors p-2">
-                            <i class="fas fa-trash-alt"></i>
+                    <td class="py-5 text-right">
+                        <button onclick="deleteKey('${k.key}')" class="w-8 h-8 rounded-lg text-slate-500 hover:text-red-500 hover:bg-red-500/10 transition-all">
+                            <i class="fa-solid fa-trash-can"></i>
                         </button>
                     </td>
                 </tr>
             `).join('');
         }
 
-        async function generateKey() {
-            const duration = document.getElementById('duration').value;
-            const limit = document.getElementById('limit').value;
-            if(!duration) return alert("Enter duration");
-
-            const res = await fetch(API_BASE, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
-                body: JSON.stringify({ duration, limit })
-            });
-            if (res.ok) { fetchKeys(); document.getElementById('duration').value = ''; }
-        }
-
         async function togglePremium(key) {
-            await fetch(API_BASE, {
+            await fetch('/api/manage', {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+                headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
                 body: JSON.stringify({ key })
             });
             fetchKeys();
         }
 
-        async function deleteKey(key) {
-            if (!confirm('Delete this license?')) return;
-            await fetch(\`\${API_BASE}?key=\${key}\`, {
-                method: 'DELETE',
-                headers: { 'x-admin-secret': secret }
+        async function generateKey() {
+            const duration = document.getElementById('duration').value;
+            const limit = document.getElementById('deviceLimit').value;
+            const res = await fetch('/api/manage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
+                body: JSON.stringify({ duration, limit })
             });
+            const data = await res.json();
+            if (data.key) {
+                document.getElementById('newKeyDisplay').innerText = data.key;
+                document.getElementById('resultBox').classList.remove('hidden');
+                fetchKeys();
+            }
+        }
+
+        async function deleteKey(key) {
+            if(!confirm("Are you sure? This will revoke access for this key.")) return;
+            await fetch('/api/manage?key=' + key, { method: 'DELETE', headers: { 'x-admin-secret': adminSecret } });
             fetchKeys();
         }
 
-        async function sendGlobalNotif() {
-            const msg = document.getElementById('globalMsg').value;
-            const res = await fetch(API_BASE, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
-                body: JSON.stringify({ action: 'broadcast', message: msg })
-            });
-            if (res.ok) alert("Global Message Updated!");
+        function copyKey() {
+            navigator.clipboard.writeText(document.getElementById('newKeyDisplay').innerText);
+            alert("Key copied to clipboard!");
         }
-
-        function logout() {
-            localStorage.removeItem('admin_secret');
-            window.location.href = '/login.html';
-        }
-
-        fetchKeys();
-        setInterval(fetchKeys, 30000);
     </script>
 </body>
 </html>
