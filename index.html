@@ -12,7 +12,6 @@
         body { background-color: #0b0f1a; color: #f8fafc; font-family: 'Inter', sans-serif; min-height: 100vh; }
         .glass { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
         
-        /* Reference UI Inputs */
         .input-group { position: relative; width: 100%; }
         .input-group i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 14px; }
         input, select { 
@@ -31,7 +30,11 @@
         .btn-primary:hover { background: #1d4ed8; transform: translateY(-1px); }
         .btn-primary:active { transform: translateY(0); }
 
-        .status-badge { font-size: 10px; font-weight: 700; letter-spacing: 0.05em; }
+        .status-badge { font-size: 10px; font-weight: 700; letter-spacing: 0.05em; white-space: nowrap; }
+        
+        /* Scrollbar styling for a cleaner look */
+        .overflow-x-auto::-webkit-scrollbar { height: 4px; }
+        .overflow-x-auto::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 10px; }
     </style>
 </head>
 <body class="flex items-center justify-center">
@@ -122,11 +125,12 @@
             <div class="lg:col-span-2 glass p-8 rounded-[24px] min-h-[500px]">
                 <h2 class="text-lg font-bold mb-6 text-white">Active Licenses</h2>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
+                    <table class="w-full text-left text-sm" style="min-width: 600px;">
                         <thead>
                             <tr class="text-slate-500 border-b border-slate-800">
                                 <th class="pb-4 font-semibold uppercase text-[10px]">Key String</th>
                                 <th class="pb-4 font-semibold uppercase text-[10px]">Usage</th>
+                                <th class="pb-4 font-semibold uppercase text-[10px]">Remaining</th>
                                 <th class="pb-4 font-semibold uppercase text-[10px]">Account Status</th>
                                 <th class="pb-4 text-right font-semibold uppercase text-[10px]">Manage</th>
                             </tr>
@@ -140,6 +144,18 @@
 
     <script>
         let adminSecret = "";
+
+        // Helper to convert seconds to readable time
+        function formatTime(seconds) {
+            if (seconds <= 0) return "Expired";
+            const days = Math.floor(seconds / 86400);
+            const hours = Math.floor((seconds % 86400) / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            
+            if (days > 0) return `${days}d ${hours}h`;
+            if (hours > 0) return `${hours}h ${minutes}m`;
+            return `${minutes}m`;
+        }
 
         async function attemptLogin() {
             const user = document.getElementById('adminUser').value;
@@ -177,6 +193,7 @@
                 <tr class="border-b border-white/5 hover:bg-white/[0.02] transition">
                     <td class="py-5 font-mono text-blue-400 font-medium">${k.key}</td>
                     <td class="py-5 text-slate-300">${k.used} <span class="text-slate-600">/</span> ${k.limit}</td>
+                    <td class="py-5 text-slate-400 text-xs font-medium">${formatTime(k.expiry)}</td>
                     <td class="py-5">
                         <button onclick="togglePremium('${k.key}')" class="status-badge px-3 py-1.5 rounded-full border transition-all ${k.isPremium ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'}">
                             <i class="fa-solid ${k.isPremium ? 'fa-crown' : 'fa-clock'} mr-1.5"></i>
