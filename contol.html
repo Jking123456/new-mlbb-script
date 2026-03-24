@@ -7,29 +7,73 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #0f172a; color: #f8fafc; font-family: 'Inter', sans-serif; }
-        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .accent-gradient { background: linear-gradient(135deg, #00e5ff 0%, #007adf 100%); }
-        input, select { background: #1e293b !important; border: 1px solid #334155 !important; color: white !important; }
+        body { background-color: #0f172a; color: #f8fafc; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .accent-gradient { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); transition: all 0.3s ease; }
+        .accent-gradient:hover { box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); transform: translateY(-1px); }
+        input { background: #1e293b !important; border: 1px solid #334155 !important; color: white !important; transition: border 0.3s; }
+        input:focus { border-color: #3b82f6 !important; outline: none; }
+        .login-card { width: 100%; max-width: 400px; border-radius: 24px; padding: 40px; }
     </style>
 </head>
-<body class="p-4 md:p-8">
-    <div class="max-w-6xl mx-auto">
+<body class="min-h-screen flex items-center justify-center">
+
+    <div id="loginSection" class="w-full flex justify-center p-4">
+        <div class="glass login-card shadow-2xl">
+            <div class="flex flex-col items-center mb-8">
+                <div class="w-16 h-16 bg-blue-600/10 border border-blue-500/30 rounded-2xl flex items-center justify-center mb-4">
+                    <i class="fa-solid fa-shield-halved text-2xl text-blue-500"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-white">Admin Panel</h1>
+                <p class="text-slate-400 mt-2">Sign in to access the dashboard</p>
+            </div>
+
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-2 ml-1">Username</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                        <input type="text" id="adminUser" placeholder="Enter your username" class="w-full pl-11 pr-4 py-3 rounded-xl">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-2 ml-1">Password</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                        <input type="password" id="adminPass" placeholder="••••••••" class="w-full pl-11 pr-4 py-3 rounded-xl">
+                    </div>
+                </div>
+                
+                <div class="flex items-center text-sm text-slate-400">
+                    <input type="checkbox" class="mr-2 rounded border-slate-700 bg-slate-800">
+                    <span>Keep me signed in</span>
+                </div>
+
+                <button onclick="attemptLogin()" id="loginBtn" class="w-full accent-gradient text-white font-bold py-4 rounded-xl shadow-lg">
+                    Sign In
+                </button>
+            </div>
+            <p class="text-center text-xs text-slate-600 mt-8">Protected area · Unauthorized access is prohibited</p>
+        </div>
+    </div>
+
+    <div id="dashboardSection" class="hidden w-full max-w-6xl mx-auto p-4 md:p-8 self-start">
         <header class="flex justify-between items-center mb-8 glass p-6 rounded-2xl">
             <div>
-                <h1 class="text-2xl font-bold tracking-tight text-cyan-400 uppercase">PRINZVAN ULTIMATE</h1>
+                <h1 class="text-2xl font-bold tracking-tight text-blue-500 uppercase">PRINZVAN ULTIMATE</h1>
                 <p class="text-slate-400 text-sm">Multi-Device Redis System v3.0</p>
             </div>
+            <button onclick="location.reload()" class="text-slate-500 hover:text-white transition"><i class="fa-solid fa-right-from-bracket"></i></button>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="lg:col-span-1">
                 <div class="glass p-6 rounded-2xl sticky top-8">
-                    <h2 class="text-xl font-semibold mb-6 flex items-center"><i class="fa-solid fa-plus-circle mr-3 text-cyan-400"></i> Create Key</h2>
+                    <h2 class="text-xl font-semibold mb-6 flex items-center text-white"><i class="fa-solid fa-plus-circle mr-3 text-blue-500"></i> Create Key</h2>
                     <div class="space-y-4">
                         <div>
                             <label class="block text-xs text-slate-500 uppercase mb-2">Duration</label>
-                            <select id="duration" class="w-full p-3 rounded-xl outline-none">
+                            <select id="duration" class="w-full p-3 rounded-xl outline-none bg-slate-800 border border-slate-700 text-white">
                                 <option value="1">1 Day</option>
                                 <option value="7">7 Days</option>
                                 <option value="30" selected>30 Days</option>
@@ -39,12 +83,12 @@
                             <label class="block text-xs text-slate-500 uppercase mb-2">Max Devices</label>
                             <input type="number" id="deviceLimit" value="1" min="1" class="w-full p-3 rounded-xl outline-none">
                         </div>
-                        <button onclick="generateKey()" class="w-full accent-gradient hover:opacity-90 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95">GENERATE KEY</button>
+                        <button onclick="generateKey()" class="w-full accent-gradient text-white font-bold py-4 rounded-xl shadow-lg">GENERATE KEY</button>
                     </div>
                     <div id="resultBox" class="mt-6 hidden">
-                        <div class="bg-cyan-500/10 border border-cyan-500/50 p-4 rounded-xl text-center">
-                            <p class="text-xs text-cyan-400 font-bold mb-1">NEW KEY CREATED</p>
-                            <code id="newKeyDisplay" onclick="copyKey()" class="text-lg font-mono text-white cursor-pointer hover:text-cyan-400 transition">--------</code>
+                        <div class="bg-blue-500/10 border border-blue-500/30 p-4 rounded-xl text-center">
+                            <p class="text-xs text-blue-400 font-bold mb-1">NEW KEY CREATED</p>
+                            <code id="newKeyDisplay" onclick="copyKey()" class="text-lg font-mono text-white cursor-pointer hover:text-blue-400 transition">--------</code>
                         </div>
                     </div>
                 </div>
@@ -52,11 +96,11 @@
 
             <div class="lg:col-span-2">
                 <div class="glass p-6 rounded-2xl min-h-[400px]">
-                    <h2 class="text-xl font-semibold mb-6">Active Licenses</h2>
+                    <h2 class="text-xl font-semibold mb-6 text-white">Active Licenses</h2>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-sm">
                             <thead>
-                                <tr class="text-slate-500 border-b border-slate-700">
+                                <tr class="text-slate-500 border-b border-slate-800">
                                     <th class="pb-4">Key String</th>
                                     <th class="pb-4">Devices</th>
                                     <th class="pb-4">Expires</th>
@@ -72,6 +116,34 @@
     </div>
 
     <script>
+        let adminToken = "";
+
+        async function attemptLogin() {
+            const user = document.getElementById('adminUser').value;
+            const pass = document.getElementById('adminPass').value;
+            const btn = document.getElementById('loginBtn');
+            
+            btn.innerText = "Authenticating...";
+            
+            const res = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user, pass })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                adminToken = data.token; // Basic security check for next requests
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('dashboardSection').classList.remove('hidden');
+                document.body.classList.remove('flex', 'items-center', 'justify-center');
+                fetchKeys();
+            } else {
+                alert("Invalid Admin Credentials");
+                btn.innerText = "Sign In";
+            }
+        }
+
         async function fetchKeys() {
             try {
                 const res = await fetch('/api/manage');
@@ -79,7 +151,7 @@
                 const tbody = document.getElementById('keyTableBody');
                 tbody.innerHTML = data.keys.map(k => `
                     <tr class="border-b border-slate-800/50 hover:bg-white/5 transition">
-                        <td class="py-4 font-mono text-cyan-200">${k.key}</td>
+                        <td class="py-4 font-mono text-blue-300">${k.key}</td>
                         <td class="py-4 font-bold text-slate-300">${k.used} / ${k.limit}</td>
                         <td class="py-4 text-slate-500">${Math.round(k.expiry / 3600)}h left</td>
                         <td class="py-4 text-right">
@@ -105,7 +177,7 @@
         }
 
         async function deleteKey(key) {
-            if(!confirm("Delete key and reset all linked devices?")) return;
+            if(!confirm("Delete key?")) return;
             await fetch('/api/manage?key=' + key, { method: 'DELETE' });
             fetchKeys();
         }
@@ -113,10 +185,7 @@
         function copyKey() {
             const text = document.getElementById('newKeyDisplay').innerText;
             navigator.clipboard.writeText(text);
-            alert("Copied: " + text);
         }
-
-        fetchKeys();
     </script>
 </body>
 </html>
