@@ -9,10 +9,12 @@ export default async function handler(req, res) {
   const authHeader = req.headers['x-admin-secret'];
   const SECRET = process.env.ADMIN_SECRET;
 
+  // Security Check: Only the Admin Panel can access these functions
   if (!authHeader || authHeader !== SECRET) {
     return res.status(401).json({ error: "Access Denied" });
   }
 
+  // GET: Fetch all active keys for the table
   if (req.method === 'GET') {
     const allKeys = await redis.keys('PRZ-*');
     const keyData = await Promise.all(allKeys.map(async (k) => {
@@ -29,8 +31,17 @@ export default async function handler(req, res) {
     return res.status(200).json({ keys: keyData });
   }
 
+  // POST: Handle Key Generation OR Global Broadcasts
   if (req.method === 'POST') {
-    const { duration, limit } = req.body;
+    const { action, duration, limit, message } = req.body;
+
+    // Logic for sending a Global Notification to the Script
+    if (action === 'broadcast') {
+        await redis.set('global_script_notif', message);
+        return res.status(200).json({ success: true });
+    }
+
+    // Default Logic: Generate a New License Key
     const newKey = "PRZ-" + Math.random().toString(36).substring(2, 10).toUpperCase();
     const seconds = parseInt(duration) * 86400;
     
@@ -38,6 +49,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ key: newKey });
   }
 
+  // PATCH: Toggle Premium Status
   if (req.method === 'PATCH') {
     const { key } = req.body;
     const data = await redis.get(key);
@@ -49,6 +61,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ success: true });
   }
 
+  // DELETE: Remove a key and its HWID data
   if (req.method === 'DELETE') {
     const { key } = req.query;
     await redis.del(key);
@@ -56,3 +69,4 @@ export default async function handler(req, res) {
     return res.status(200).json({ success: true });
   }
 }
+  
