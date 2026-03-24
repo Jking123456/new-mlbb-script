@@ -13,8 +13,7 @@ export default async function handler(req, res) {
     const keyData = await redis.get(key);
     if (!keyData) return res.status(403).send("INVALID_OR_EXPIRED");
 
-    // --- PREMIUM CHECK ---
-    // If isPremium is false, block access
+    // 🔒 PREMIUM CHECK
     if (keyData.isPremium === false) {
       return res.status(402).send("you're still not a premium user");
     }
