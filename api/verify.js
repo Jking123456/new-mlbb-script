@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     let statusMessage = "Free Version Loaded";
 
     if (keyData.isPremium === true) {
-      scriptFileName = "main.lua"; // Upgrade for premium
+      scriptFileName = "kupalka.lua"; // Upgrade for premium
       statusMessage = "Premium Version Loaded";
     }
 
