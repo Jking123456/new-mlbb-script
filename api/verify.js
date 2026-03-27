@@ -13,6 +13,19 @@ export default async function handler(req, res) {
     const keyData = await redis.get(key);
     if (!keyData) return res.status(403).send("INVALID_OR_EXPIRED");
 
+    // --- ACTIVATION LOGIC (Start Timer on First Use) ---
+    // If the key has not been activated yet, start the countdown now
+    if (keyData.activated === false) {
+      keyData.activated = true;
+      const duration = keyData.duration || 86400; // Default to 24h if missing
+      
+      // Update Redis: Set the key with the expiry (TTL) for the first time
+      await redis.set(key, keyData, { ex: duration });
+      
+      // Also ensure the HWID list expires at the same time as the key
+      await redis.expire(`hwids:${key}`, duration);
+    }
+
     // --- HWID MANAGEMENT ---
     const isRegistered = await redis.sismember(`hwids:${key}`, hwid);
     if (!isRegistered) {
@@ -24,12 +37,11 @@ export default async function handler(req, res) {
     }
 
     // --- DYNAMIC SCRIPT SELECTION ---
-    // If isPremium is true, get main.lua. Otherwise, get main2.lua
-    let scriptFileName = "main2.lua"; // Default for non-premium
+    let scriptFileName = "main2.lua"; 
     let statusMessage = "Free Version Loaded";
 
     if (keyData.isPremium === true) {
-      scriptFileName = "kupalka.lua"; // Upgrade for premium
+      scriptFileName = "kupalka.lua"; 
       statusMessage = "Premium Version Loaded";
     }
 
@@ -48,7 +60,6 @@ export default async function handler(req, res) {
 
     const scriptContent = await githubResponse.text();
 
-    // We send a custom header so the Loader knows which version was sent
     res.setHeader('X-Script-Status', statusMessage);
     res.setHeader('Content-Type', 'text/plain');
     
