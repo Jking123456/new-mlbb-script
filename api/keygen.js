@@ -10,8 +10,9 @@ export default async function handler(req, res) {
 
   try {
     const freeKey = "PRZ-FREE-" + Math.random().toString(36).substring(2, 8).toUpperCase();
-    const durationSeconds = 86400; // 1 Day
+    const durationSeconds = 86400; // 24 Hours
 
+    // Store in Redis as 'Pending'
     await redis.set(freeKey, { 
         limit: 1, 
         isPremium: false,
@@ -19,12 +20,9 @@ export default async function handler(req, res) {
         activated: false 
     });
 
-    const api_token = "1de83a40a7f0f1ec1c3a7bce28d9b9af26e399fd";
-    const target_url = `https://new-mlbb-script.vercel.app/success.html?key=${freeKey}`;
-    const shrinkUrl = `https://shrinkme.io/st?api=${api_token}&url=${encodeURIComponent(target_url)}`;
-
-    return res.status(200).json({ success: true, shortlink: shrinkUrl });
+    return res.status(200).json({ success: true, key: freeKey });
   } catch (error) {
-    return res.status(500).json({ error: "Failed to generate link" });
+    console.error(error);
+    return res.status(500).json({ error: "Failed to generate key" });
   }
 }
