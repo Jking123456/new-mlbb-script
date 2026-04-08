@@ -8,29 +8,29 @@ const redis = new Redis({
 export default async function handler(req, res) {
   const { key } = req.query;
 
-  // 🛡️ ANTI-CANARY / PROXY CHECK
-  const isProxy = req.headers['via'] || req.headers['proxy-connection'] || req.headers['x-forwarded-proto'] === 'http';
-  if (isProxy) {
-    return res.status(403).json({ error: "Proxy/Canary Detected" });
+  // Anti-Proxy / Anti-Canary Check
+  const via = req.headers['via'];
+  const proxy = req.headers['proxy-connection'] || req.headers['x-forwarded-proto'] === 'http';
+  if (via || proxy) {
+    return res.status(403).json({ error: "Proxy Detected" });
   }
 
-  if (!key) return res.status(400).json({ error: "Access Denied" });
+  if (!key) return res.status(400).json({ error: "Missing key" });
 
   try {
     const data = await redis.get(key);
 
-    // Bypass check: Key must exist and not be activated yet
     if (!data || data.activated === true) {
-      return res.status(403).json({ error: "Invalid or Expired Link" });
+      return res.status(403).json({ error: "Bypass Detected" });
     }
 
-    // 🎭 MASKING THE KEY
-    // We reverse the Base64 string so Canary users see scrambled nonsense
-    const mask = Buffer.from(key).toString('base64').split('').reverse().join('');
+    // OBFUSCATION: Reverse + Base64
+    // If key is 'PRZ-FREE-ABC', Canary sees 'Q0JBLUVFUkYtWlJQ'
+    const masked = Buffer.from(key).toString('base64').split('').reverse().join('');
 
     return res.status(200).json({ 
         success: true, 
-        payload: mask 
+        payload: masked 
     });
 
   } catch (error) {
