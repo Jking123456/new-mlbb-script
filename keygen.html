@@ -151,7 +151,6 @@
     <script>
         let readyLink = "";
 
-        // Unscramble logic
         function demask(payload) {
             try {
                 const reversed = payload.split('').reverse().join('');
@@ -164,17 +163,14 @@
             const urlToken = urlParams.get('token'); // NOW LOOKS FOR TOKEN
 
             if (urlToken) {
-                // 1. Clean URL Bar
                 window.history.replaceState({}, document.title, window.location.pathname);
                 
-                // 2. Transition UI
                 document.getElementById('generateSection').classList.add('hidden');
                 document.getElementById('statusIcon').className = "w-24 h-24 bg-blue-500/10 rounded-3xl flex items-center justify-center mx-auto mb-8 animate-pulse";
                 document.getElementById('title').innerText = "Verifying Session...";
                 document.getElementById('description').innerText = "Processing tokens and securing your 24h license.";
 
                 try {
-                    // 3. Trade Token for Key
                     const res = await fetch(`/api/verify-claim?token=${urlToken}`);
                     const data = await res.json();
 
@@ -201,12 +197,8 @@
             try {
                 const res = await fetch('/api/keygen', { method: 'POST' });
                 const data = await res.json();
-
-                // If they have an unactivated final key, IP Lock kicks in
                 if (res.status === 403 && data.pendingKey) {
-                    alert("Unused key found! Returning to your license.");
-                    // Since it's a real key, we call verify-claim differently if needed, 
-                    // or just redirect with a fake token. For now, redirect to original claim.
+                    alert("Unused key found! Returning to your license."); 
                     window.location.href = `/keygen.html?token=RECOVER&key=${data.pendingKey}`; 
                     return;
                 }
