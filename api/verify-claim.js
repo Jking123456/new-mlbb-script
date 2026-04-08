@@ -8,34 +8,32 @@ const redis = new Redis({
 export default async function handler(req, res) {
   const { key } = req.query;
 
-  // 1. Anti-Proxy/Canary Check
+  // 🛡️ ANTI-CANARY / PROXY CHECK
   const isProxy = req.headers['via'] || req.headers['proxy-connection'] || req.headers['x-forwarded-proto'] === 'http';
   if (isProxy) {
-    return res.status(403).json({ error: "Security Violation: Proxy Detected" });
+    return res.status(403).json({ error: "Proxy/Canary Detected" });
   }
 
-  if (!key) return res.status(400).json({ error: "Missing identity" });
+  if (!key) return res.status(400).json({ error: "Access Denied" });
 
   try {
     const data = await redis.get(key);
 
-    // 2. Validate Key existence and status
+    // Bypass check: Key must exist and not be activated yet
     if (!data || data.activated === true) {
-      return res.status(403).json({ error: "Invalid or already used" });
+      return res.status(403).json({ error: "Invalid or Expired Link" });
     }
 
-    // 3. Masking the Key (XOR + Base64 + Reverse)
-    // This makes the response unreadable in HTTP Canary logs
-    const rawKey = key;
-    const encoded = Buffer.from(rawKey).toString('base64');
-    const scrambled = encoded.split('').reverse().join('');
+    // 🎭 MASKING THE KEY
+    // We reverse the Base64 string so Canary users see scrambled nonsense
+    const mask = Buffer.from(key).toString('base64').split('').reverse().join('');
 
     return res.status(200).json({ 
         success: true, 
-        p: scrambled // 'p' stands for payload; obscures the 'key' label
+        payload: mask 
     });
 
   } catch (error) {
-    return res.status(500).json({ error: "System Error" });
+    return res.status(500).json({ error: "Server Error" });
   }
 }
