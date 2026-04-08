@@ -21,7 +21,7 @@ export default async function handler(req, res) {
     // 1. Verify the Temp Token
     const tempData = await redis.get(`temp_${token}`);
     if (!tempData) {
-      return res.status(403).json({ error: "Expired or Invalid Session" });
+      return res.status(403).json({ error: "Contact the Admin to retrieve your unused key!" });
     }
 
     // 2. Generate the REAL License Key
@@ -31,7 +31,7 @@ export default async function handler(req, res) {
     await redis.set(finalKey, { 
         activated: false, 
         duration: 86400,
-        isPremium: false 
+        isPremium: true 
     });
 
     // LOCK THE IP to this new key
