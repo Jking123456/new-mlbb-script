@@ -8,43 +8,44 @@ const redis = new Redis({
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).send("Method Not Allowed");
 
+  const { deviceId } = req.body; // Unique Fingerprint ID from Frontend
+  if (!deviceId) return res.status(400).json({ error: "Device identification failed" });
+
   const referer = req.headers['referer'];
   const allowedHost = "new-mlbb-script.vercel.app";
   if (!referer || !referer.includes(allowedHost)) {
-    return res.status(403).json({ error: "Unauthorized Source" });
+    return res.status(403).json({ error: "Unauthorized" });
   }
 
+  // Double-lock: IP and Device ID
   const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-  const ipLockKey = `ip_lock:${ip}`;
+  const deviceLockKey = `device_lock:${deviceId}`;
 
   try {
-    // 1. Check if they already have an active/unactivated key
-    const existingKey = await redis.get(ipLockKey);
-    if (existingKey) {
-        const keyData = await redis.get(existingKey);
+    // 1. Check for an existing unactivated key on this DEVICE
+    const pendingKey = await redis.get(deviceLockKey);
+    if (pendingKey) {
+        const keyData = await redis.get(pendingKey);
         if (keyData && !keyData.activated) {
-            return res.status(403).json({ error: "LOCKED", pendingKey: existingKey });
+            return res.status(403).json({ error: "LOCKED", pendingKey });
         }
     }
 
-    // 2. Create a Temporary Token (expires in 10 mins)
+    // 2. Create Temp Token
     const tempToken = "TMP-" + Math.random().toString(36).substring(2, 10).toUpperCase();
-    await redis.set(`temp_${tempToken}`, { ip: ip }, { ex: 600 }); 
+    
+    // Store temp token with deviceId info so only that device can claim it
+    await redis.set(`temp_${tempToken}`, { deviceId, ip }, { ex: 600 }); 
 
     const api_token = "1de83a40a7f0f1ec1c3a7bce28d9b9af26e399fd";
     const destination = `https://${allowedHost}/keygen.html?token=${tempToken}`;
     
-    // Official ShrinkMe API
     const apiUrl = `https://shrinkme.io/api?api=${api_token}&url=${encodeURIComponent(destination)}&format=text`;
     const response = await fetch(apiUrl);
     const shortlink = await response.text();
 
-    if (shortlink && shortlink.startsWith('http')) {
-        res.setHeader('Cache-Control', 'no-store, max-age=0');
-        return res.status(200).json({ success: true, shortlink: shortlink.trim() });
-    } else {
-        throw new Error("API Failure");
-    }
+    res.setHeader('Cache-Control', 'no-store, max-age=0');
+    return res.status(200).json({ success: true, shortlink: shortlink.trim() });
 
   } catch (error) {
     return res.status(500).json({ error: "Server Error" });
