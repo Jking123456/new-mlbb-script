@@ -20,7 +20,7 @@ export default async function handler(req, res) {
     });
 
     const api_token = "1de83a40a7f0f1ec1c3a7bce28d9b9af26e399fd";
-    const target_url = `https://new-mlbb-script.vercel.app/api/claim?key=${freeKey}`;
+    const target_url = `https://new-mlbb-script.vercel.app/success.html?key=${freeKey}`;
     const shrinkUrl = `https://shrinkme.io/st?api=${api_token}&url=${encodeURIComponent(target_url)}`;
 
     return res.status(200).json({ success: true, shortlink: shrinkUrl });
