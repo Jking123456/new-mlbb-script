@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     // Store in Redis
     await redis.set(freeKey, { 
         limit: 1, 
-        isPremium: false,
+        isPremium: true,
         duration: durationSeconds,
         activated: false 
     });
