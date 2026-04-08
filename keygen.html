@@ -3,95 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PRINZVAN | Get Free Key</title>
+    <title>PRINZVAN | Get Key</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        
-        body { background-color: #0b0f1a; color: #f8fafc; font-family: 'Inter', sans-serif; min-height: 100vh; }
+        body { background-color: #0b0f1a; color: #f8fafc; font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
         .glass { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        
-        .btn-glow { 
-            background: linear-gradient(135deg, #2563eb, #3b82f6);
-            box-shadow: 0 0 20px rgba(37, 99, 235, 0.4);
-            transition: all 0.2s ease;
-        }
-        .btn-glow:hover { transform: translateY(-1px); box-shadow: 0 0 30px rgba(37, 99, 235, 0.6); }
-        .btn-glow:active { transform: translateY(0); }
+        .btn-glow { background: linear-gradient(135deg, #2563eb, #3b82f6); box-shadow: 0 0 20px rgba(37, 99, 235, 0.4); }
     </style>
 </head>
-<body class="flex items-center justify-center p-6">
-
+<body class="p-6">
     <div class="w-full max-w-md">
         <div class="glass rounded-[32px] p-8 text-center shadow-2xl border border-white/5">
-            <div class="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <i class="fa-solid fa-key text-3xl text-blue-500"></i>
+            <div id="genIcon" class="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fa-solid fa-bolt text-3xl text-blue-500"></i>
             </div>
 
             <h1 class="text-2xl font-bold mb-2">Free 24h Access</h1>
-            <p class="text-slate-400 text-sm mb-8">Complete the shortlink to generate your unique license key.</p>
+            <p class="text-slate-400 text-sm mb-8">Generate a license key to access the script features.</p>
 
             <div class="space-y-4">
-                <div class="bg-white/5 p-4 rounded-2xl text-left border border-white/5">
-                    <div class="flex items-center gap-3 text-xs text-slate-400 mb-2">
-                        <i class="fa-solid fa-circle-info text-blue-500"></i>
-                        <span class="font-bold uppercase tracking-wider">Instructions</span>
+                <div id="resultBox" class="hidden mb-6">
+                    <p class="text-[10px] font-bold text-blue-400 uppercase mb-2">Your License Key</p>
+                    <div id="keyDisplay" onclick="copyKey()" class="bg-white/5 border border-blue-500/30 p-4 rounded-2xl font-mono text-xl text-white cursor-pointer hover:bg-blue-500/10 transition">
+                        -------
                     </div>
-                    <ul class="text-[11px] text-slate-500 space-y-2">
-                        <li class="flex items-start gap-2">
-                            <i class="fa-solid fa-check text-[8px] mt-1 text-green-500"></i>
-                            <span>Key is valid for 1 device (HWID locked).</span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <i class="fa-solid fa-check text-[8px] mt-1 text-green-500"></i>
-                            <span>24-hour countdown starts upon first login.</span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <i class="fa-solid fa-triangle-exclamation text-[8px] mt-1 text-amber-500"></i>
-                            <span>Turn off VPN/Adblock to avoid "about:blank" errors.</span>
-                        </li>
-                    </ul>
+                    <p class="text-[10px] text-slate-500 mt-2">Click the key to copy</p>
                 </div>
 
-                <button onclick="getLink()" id="genBtn" class="w-full btn-glow text-white font-bold py-4 rounded-xl transition-all">
-                    GENERATE SHORTLINK
+                <button onclick="generateNow()" id="genBtn" class="w-full btn-glow text-white font-bold py-4 rounded-xl transition-all">
+                    GENERATE KEY
                 </button>
             </div>
 
-            <p class="text-center text-[10px] text-slate-600 mt-10 uppercase tracking-widest">
-                Prinzvan Ultimate • Secure Auth System
-            </p>
+            <p class="text-[10px] text-slate-600 mt-10 uppercase tracking-widest">Prinzvan Ultimate • Local Auth</p>
         </div>
     </div>
-<script>
-    async function getLink() {
-        const btn = document.getElementById('genBtn');
-        btn.innerText = "PREPARING LINK...";
-        btn.disabled = true;
 
-        try {
-            const res = await fetch('/api/keygen', { method: 'POST' });
-            const data = await res.json();
+    <script>
+        async function generateNow() {
+            const btn = document.getElementById('genBtn');
+            const resultBox = document.getElementById('resultBox');
+            const keyDisplay = document.getElementById('keyDisplay');
             
-            if (data.shortlink) {
-                // Change the button to a direct link to bypass the 'blocked' error
-                btn.innerText = "CLICK TO PROCEED";
-                btn.disabled = false;
-                btn.onclick = () => window.location.href = data.shortlink;
+            btn.innerText = "GENERATING...";
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/keygen', { method: 'POST' });
+                const data = await res.json();
                 
-                // Show a small instruction
-                const tip = document.createElement('p');
-                tip.className = "text-[10px] text-blue-400 mt-2 animate-pulse";
-                tip.innerText = "Click the button again to continue to the shortlink.";
-                btn.parentNode.appendChild(tip);
+                if (data.key) {
+                    keyDisplay.innerText = data.key;
+                    resultBox.classList.remove('hidden');
+                    btn.innerText = "GENERATE ANOTHER";
+                    btn.disabled = false;
+                    // Change icon to success
+                    document.getElementById('genIcon').innerHTML = '<i class="fa-solid fa-check text-3xl text-green-500"></i>';
+                }
+            } catch (e) {
+                alert("Error generating key.");
+                btn.innerText = "GENERATE KEY";
+                btn.disabled = false;
             }
-        } catch (e) {
-            alert("Connection Error.");
-            btn.innerText = "GENERATE SHORTLINK";
-            btn.disabled = false;
         }
-    }
-</script>
+
+        function copyKey() {
+            const key = document.getElementById('keyDisplay').innerText;
+            navigator.clipboard.writeText(key);
+            alert("Key copied to clipboard!");
+        }
+    </script>
 </body>
 </html>
