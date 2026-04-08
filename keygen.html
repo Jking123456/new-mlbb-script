@@ -7,68 +7,99 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #0b0f1a; color: #f8fafc; font-family: 'Inter', sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body { background-color: #0b0f1a; color: #f8fafc; font-family: 'Inter', sans-serif; min-height: 100vh; }
         .glass { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        
         .btn-glow { 
             background: linear-gradient(135deg, #2563eb, #3b82f6);
             box-shadow: 0 0 20px rgba(37, 99, 235, 0.4);
+            transition: all 0.2s ease;
         }
+        .btn-glow:hover { transform: translateY(-1px); box-shadow: 0 0 30px rgba(37, 99, 235, 0.6); }
+        .btn-glow:active { transform: translateY(0); }
     </style>
 </head>
-<body class="flex items-center justify-center min-height-screen p-6">
-    <div class="w-full max-w-md mt-20">
-        <div class="glass rounded-[32px] p-8 text-center shadow-2xl">
+<body class="flex items-center justify-center p-6">
+
+    <div class="w-full max-w-md">
+        <div class="glass rounded-[32px] p-8 text-center shadow-2xl border border-white/5">
             <div class="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
                 <i class="fa-solid fa-key text-3xl text-blue-500"></i>
             </div>
+
             <h1 class="text-2xl font-bold mb-2">Free 24h Access</h1>
             <p class="text-slate-400 text-sm mb-8">Complete the shortlink to generate your unique license key.</p>
 
             <div class="space-y-4">
-                <div class="bg-white/5 p-4 rounded-2xl text-left">
-                    <div class="flex items-center gap-3 text-xs text-slate-400 mb-1">
-                        <i class="fa-solid fa-circle-info"></i>
-                        <span>RULES</span>
+                <div class="bg-white/5 p-4 rounded-2xl text-left border border-white/5">
+                    <div class="flex items-center gap-3 text-xs text-slate-400 mb-2">
+                        <i class="fa-solid fa-circle-info text-blue-500"></i>
+                        <span class="font-bold uppercase tracking-wider">Instructions</span>
                     </div>
-                    <ul class="text-[11px] text-slate-500 space-y-1">
-                        <li>• Valid for 1 Device only</li>
-                        <li>• Duration: 24 Hours from first use</li>
-                        <li>• Do not use VPN/Adblock on link</li>
+                    <ul class="text-[11px] text-slate-500 space-y-2">
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check text-[8px] mt-1 text-green-500"></i>
+                            <span>Key is valid for 1 device (HWID locked).</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-check text-[8px] mt-1 text-green-500"></i>
+                            <span>24-hour countdown starts upon first login.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-triangle-exclamation text-[8px] mt-1 text-amber-500"></i>
+                            <span>Turn off VPN/Adblock to avoid "about:blank" errors.</span>
+                        </li>
                     </ul>
                 </div>
 
-                <button onclick="getLink()" id="genBtn" class="w-full btn-glow text-white font-bold py-4 rounded-xl transition-all active:scale-95">
+                <button onclick="getLink()" id="genBtn" class="w-full btn-glow text-white font-bold py-4 rounded-xl transition-all">
                     GENERATE SHORTLINK
                 </button>
             </div>
 
-            <p class="text-[10px] text-slate-600 mt-8 tracking-widest uppercase">Prinzvan Ultimate Protection</p>
+            <p class="text-center text-[10px] text-slate-600 mt-10 uppercase tracking-widest">
+                Prinzvan Ultimate • Secure Auth System
+            </p>
         </div>
     </div>
 
     <script>
         async function getLink() {
             const btn = document.getElementById('genBtn');
-            btn.innerText = "GENERATING...";
+            const originalText = btn.innerText;
+            
+            btn.innerText = "GENERATING LICENSE...";
             btn.disabled = true;
+            btn.style.opacity = "0.7";
 
             try {
-                const res = await fetch('/api/keygen', { method: 'POST' });
+                const res = await fetch('/api/keygen', { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
                 const data = await res.json();
+                
                 if (data.shortlink) {
-                    window.location.href = data.shortlink;
+                    // Using replace helps the browser treat the redirect as 
+                    // a continuation of the current session
+                    window.location.replace(data.shortlink);
                 } else {
-                    alert("System Busy. Try again later.");
-                    btn.innerText = "GENERATE SHORTLINK";
+                    alert("System is currently busy. Please try again in a few minutes.");
+                    btn.innerText = originalText;
                     btn.disabled = false;
+                    btn.style.opacity = "1";
                 }
-            } catch (e) {
-                alert("Connection Error.");
-                btn.innerText = "GENERATE SHORTLINK";
+            } catch (error) {
+                console.error("Error:", error);
+                alert("Connection Error: Please check your internet and try again.");
+                btn.innerText = originalText;
                 btn.disabled = false;
+                btn.style.opacity = "1";
             }
         }
     </script>
 </body>
 </html>
-
