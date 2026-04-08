@@ -12,6 +12,7 @@
         .glass { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
         .btn-glow { background: linear-gradient(135deg, #2563eb, #3b82f6); box-shadow: 0 0 20px rgba(37, 99, 235, 0.4); }
         .key-box { border: 1px dashed #3b82f6; background: rgba(59, 130, 246, 0.05); }
+        .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
     </style>
 </head>
 <body class="p-6">
@@ -34,12 +35,15 @@
             </div>
 
             <div id="successSection" class="hidden">
-                <div class="key-box p-5 rounded-2xl font-mono text-2xl text-white tracking-widest mb-6">
+                <div class="key-box p-5 rounded-2xl font-mono text-2xl text-white tracking-widest mb-4">
                     <span id="keyText">-------</span>
                 </div>
                 <button onclick="copyKey()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg">
-                    COPY KEY
+                    COPY LICENSE KEY
                 </button>
+                <p class="text-[10px] text-amber-500 mt-4 font-bold uppercase tracking-tighter animate-pulse-slow">
+                    ⚠️ DO NOT REFRESH. Copy the key now.
+                </p>
             </div>
 
         </div>
@@ -47,10 +51,8 @@
 
     <script>
         let readyLink = "";
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlKey = urlParams.get('key');
 
-        // Security: Unscramble the payload
+        // Obfuscation: Unscramble the payload from verify-claim.js
         function demask(payload) {
             try {
                 const reversed = payload.split('').reverse().join('');
@@ -59,9 +61,17 @@
         }
 
         window.onload = async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlKey = urlParams.get('key');
+
             if (urlKey) {
+                // 1. IMMEDIATELY clean the URL bar [Invisible Mode]
+                window.history.replaceState({}, document.title, window.location.pathname);
+
+                // 2. Start Verification UI
                 document.getElementById('generateSection').classList.add('hidden');
                 document.getElementById('title').innerText = "Securing Connection...";
+                document.getElementById('description').innerText = "Verifying your shortlink completion...";
 
                 try {
                     const res = await fetch(`/api/verify-claim?key=${urlKey}`);
@@ -71,7 +81,7 @@
                         const realKey = demask(data.payload);
                         showSuccessMode(realKey);
                     } else {
-                        alert("Security Violation: Bypass Detected.");
+                        alert("Security Violation: Bypass or Expired Link.");
                         window.location.replace('/keygen.html');
                     }
                 } catch (e) {
@@ -85,7 +95,7 @@
             const tip = document.getElementById('tip');
             if (readyLink) { window.location.href = readyLink; return; }
 
-            btn.innerText = "WAIT...";
+            btn.innerText = "REQUESTING...";
             btn.disabled = true;
 
             try {
@@ -99,7 +109,7 @@
                     tip.classList.remove('hidden');
                 }
             } catch (e) {
-                alert("Error.");
+                alert("Error connecting to server.");
                 btn.innerText = "GENERATE SHORTLINK";
                 btn.disabled = false;
             }
@@ -108,17 +118,19 @@
         function showSuccessMode(key) {
             document.getElementById('generateSection').classList.add('hidden');
             document.getElementById('successSection').classList.remove('hidden');
+            
             document.getElementById('statusIcon').innerHTML = '<i class="fa-solid fa-shield-check text-3xl text-green-500"></i>';
             document.getElementById('statusIcon').className = "w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6";
+            
             document.getElementById('title').innerText = "Verified!";
-            document.getElementById('description').innerText = "Your license has been securely delivered.";
+            document.getElementById('description').innerText = "License generated successfully.";
             document.getElementById('keyText').innerText = key;
         }
 
         function copyKey() {
             const text = document.getElementById('keyText').innerText;
             navigator.clipboard.writeText(text);
-            alert("Key copied!");
+            alert("Key copied! Do not close this page until it is pasted.");
         }
     </script>
 </body>
