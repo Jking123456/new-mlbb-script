@@ -17,14 +17,14 @@
 <body class="p-6">
 
     <div class="w-full max-w-md">
-        <div id="mainCard" class="glass rounded-[32px] p-8 text-center shadow-2xl border border-white/5">
+        <div class="glass rounded-[32px] p-8 text-center shadow-2xl border border-white/5">
             
             <div id="statusIcon" class="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
                 <i class="fa-solid fa-bolt text-3xl text-blue-500"></i>
             </div>
 
             <h1 id="title" class="text-2xl font-bold mb-2">Free 24h Access</h1>
-            <p id="description" class="text-slate-400 text-sm mb-8">Generate a key by completing the shortlink.</p>
+            <p id="description" class="text-slate-400 text-sm mb-8">Complete the shortlink to generate your key.</p>
 
             <div id="generateSection" class="space-y-4">
                 <button onclick="handleFlow()" id="mainBtn" class="w-full btn-glow text-white font-bold py-4 rounded-xl transition-all">
@@ -34,11 +34,11 @@
             </div>
 
             <div id="successSection" class="hidden">
-                <div class="key-box p-5 rounded-2xl font-mono text-2xl text-white tracking-widest mb-6 select-all">
+                <div class="key-box p-5 rounded-2xl font-mono text-2xl text-white tracking-widest mb-6">
                     <span id="keyText">-------</span>
                 </div>
                 <button onclick="copyKey()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg">
-                    <i class="fa-solid fa-copy mr-2"></i> COPY KEY
+                    COPY KEY
                 </button>
             </div>
 
@@ -50,22 +50,28 @@
         const urlParams = new URLSearchParams(window.location.search);
         const urlKey = urlParams.get('key');
 
-        // Security Check on Load
+        // Security: Unscramble the payload
+        function demask(payload) {
+            try {
+                const reversed = payload.split('').reverse().join('');
+                return atob(reversed);
+            } catch (e) { return "INVALID_PAYLOAD"; }
+        }
+
         window.onload = async () => {
             if (urlKey) {
-                // Initializing Verification State
                 document.getElementById('generateSection').classList.add('hidden');
-                document.getElementById('title').innerText = "Verifying Link...";
-                document.getElementById('description').innerText = "Please wait while we validate your access.";
+                document.getElementById('title').innerText = "Securing Connection...";
 
                 try {
                     const res = await fetch(`/api/verify-claim?key=${urlKey}`);
                     const data = await res.json();
 
                     if (data.success) {
-                        showSuccessMode(data.key);
+                        const realKey = demask(data.payload);
+                        showSuccessMode(realKey);
                     } else {
-                        alert("Bypass Detected or Expired Link!");
+                        alert("Security Violation: Bypass Detected.");
                         window.location.replace('/keygen.html');
                     }
                 } catch (e) {
@@ -77,19 +83,14 @@
         async function handleFlow() {
             const btn = document.getElementById('mainBtn');
             const tip = document.getElementById('tip');
+            if (readyLink) { window.location.href = readyLink; return; }
 
-            if (readyLink) {
-                window.location.href = readyLink;
-                return;
-            }
-
-            btn.innerText = "REQUESTING...";
+            btn.innerText = "WAIT...";
             btn.disabled = true;
 
             try {
                 const res = await fetch('/api/keygen', { method: 'POST' });
                 const data = await res.json();
-                
                 if (data.shortlink) {
                     readyLink = data.shortlink;
                     btn.innerText = "PROCEED TO LINK";
@@ -98,7 +99,7 @@
                     tip.classList.remove('hidden');
                 }
             } catch (e) {
-                alert("Server Error. Try again.");
+                alert("Error.");
                 btn.innerText = "GENERATE SHORTLINK";
                 btn.disabled = false;
             }
@@ -107,19 +108,17 @@
         function showSuccessMode(key) {
             document.getElementById('generateSection').classList.add('hidden');
             document.getElementById('successSection').classList.remove('hidden');
-            
-            document.getElementById('statusIcon').innerHTML = '<i class="fa-solid fa-check-double text-3xl text-green-500"></i>';
+            document.getElementById('statusIcon').innerHTML = '<i class="fa-solid fa-shield-check text-3xl text-green-500"></i>';
             document.getElementById('statusIcon').className = "w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6";
-            
-            document.getElementById('title').innerText = "Access Granted!";
-            document.getElementById('description').innerText = "Your 24-hour license is ready.";
+            document.getElementById('title').innerText = "Verified!";
+            document.getElementById('description').innerText = "Your license has been securely delivered.";
             document.getElementById('keyText').innerText = key;
         }
 
         function copyKey() {
             const text = document.getElementById('keyText').innerText;
             navigator.clipboard.writeText(text);
-            alert("Key copied! Paste it in the script.");
+            alert("Key copied!");
         }
     </script>
 </body>
