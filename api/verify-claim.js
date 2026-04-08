@@ -7,9 +7,8 @@ const redis = new Redis({
 
 export default async function handler(req, res) {
   const { token } = req.query;
-  const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
-  // Security Headers
+  // Security Referer Check
   const referer = req.headers['referer'];
   if (!referer || !referer.includes("new-mlbb-script.vercel.app")) {
     return res.status(403).json({ error: "Direct access forbidden" });
@@ -18,29 +17,33 @@ export default async function handler(req, res) {
   if (!token) return res.status(400).json({ error: "Missing Token" });
 
   try {
-    // 1. Verify the Temp Token
+    // 1. Get the temp token data (which has the deviceId from keygen)
     const tempData = await redis.get(`temp_${token}`);
-    if (!tempData) {
-      return res.status(403).json({ error: "Contact the Admin to retrieve your unused key!" });
+    if (!tempData || !tempData.deviceId) {
+        return res.status(403).json({ error: "Invalid Session or Token Expired" });
     }
 
-    // 2. Generate the REAL License Key
+    const { deviceId } = tempData;
+
+    // 2. Generate the FINAL PRZ Key
     const finalKey = "PRZ-FREE-" + Math.random().toString(36).substring(2, 8).toUpperCase();
     
-    // Save final key data
+    // Save the key with activated: false
     await redis.set(finalKey, { 
         activated: false, 
         duration: 86400,
-        isPremium: true 
+        isPremium: true,
+        deviceId: deviceId 
     });
 
-    // LOCK THE IP to this new key
-    await redis.set(`ip_lock:${ip}`, finalKey);
+    // 3. SET THE PERMANENT DEVICE LOCK
+    // This links this Phone ID to this specific Key Name
+    await redis.set(`device_lock:${deviceId}`, finalKey);
     
-    // 3. Destroy the temp token so it can't be used twice
+    // 4. Cleanup: Remove the temporary session token
     await redis.del(`temp_${token}`);
 
-    // Obfuscate for UI safety (Reverse + Base64)
+    // Mask the key (Reverse + Base64) for frontend delivery
     const masked = Buffer.from(finalKey).toString('base64').split('').reverse().join('');
 
     return res.status(200).json({ 
@@ -49,7 +52,7 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
+    console.error(error);
     return res.status(500).json({ error: "Server Error" });
   }
-      }
-      
+}
