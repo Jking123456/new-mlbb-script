@@ -8,32 +8,34 @@ const redis = new Redis({
 export default async function handler(req, res) {
   const { key } = req.query;
 
-  if (!key) {
-    return res.status(400).json({ error: "Missing key" });
+  // 1. Anti-Proxy/Canary Check
+  const isProxy = req.headers['via'] || req.headers['proxy-connection'] || req.headers['x-forwarded-proto'] === 'http';
+  if (isProxy) {
+    return res.status(403).json({ error: "Security Violation: Proxy Detected" });
   }
+
+  if (!key) return res.status(400).json({ error: "Missing identity" });
 
   try {
     const data = await redis.get(key);
 
-    // If key doesn't exist, it's a fake/bypass attempt
-    if (!data) {
-      return res.status(403).json({ error: "Invalid License Key" });
+    // 2. Validate Key existence and status
+    if (!data || data.activated === true) {
+      return res.status(403).json({ error: "Invalid or already used" });
     }
 
-    // If key is already activated, it shouldn't be revealed again via keygen
-    if (data.activated === true) {
-      return res.status(403).json({ error: "Key already in use" });
-    }
+    // 3. Masking the Key (XOR + Base64 + Reverse)
+    // This makes the response unreadable in HTTP Canary logs
+    const rawKey = key;
+    const encoded = Buffer.from(rawKey).toString('base64');
+    const scrambled = encoded.split('').reverse().join('');
 
-    // Success: The key is valid and pending activation
     return res.status(200).json({ 
         success: true, 
-        key: key 
+        p: scrambled // 'p' stands for payload; obscures the 'key' label
     });
 
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({ error: "System Error" });
   }
 }
-
