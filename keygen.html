@@ -64,42 +64,34 @@
             </p>
         </div>
     </div>
+<script>
+    async function getLink() {
+        const btn = document.getElementById('genBtn');
+        btn.innerText = "PREPARING LINK...";
+        btn.disabled = true;
 
-    <script>
-        async function getLink() {
-            const btn = document.getElementById('genBtn');
-            const originalText = btn.innerText;
+        try {
+            const res = await fetch('/api/keygen', { method: 'POST' });
+            const data = await res.json();
             
-            btn.innerText = "GENERATING LICENSE...";
-            btn.disabled = true;
-            btn.style.opacity = "0.7";
-
-            try {
-                const res = await fetch('/api/keygen', { 
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                
-                const data = await res.json();
-                
-                if (data.shortlink) {
-                    // Using replace helps the browser treat the redirect as 
-                    // a continuation of the current session
-                    window.location.replace(data.shortlink);
-                } else {
-                    alert("System is currently busy. Please try again in a few minutes.");
-                    btn.innerText = originalText;
-                    btn.disabled = false;
-                    btn.style.opacity = "1";
-                }
-            } catch (error) {
-                console.error("Error:", error);
-                alert("Connection Error: Please check your internet and try again.");
-                btn.innerText = originalText;
+            if (data.shortlink) {
+                // Change the button to a direct link to bypass the 'blocked' error
+                btn.innerText = "CLICK TO PROCEED";
                 btn.disabled = false;
-                btn.style.opacity = "1";
+                btn.onclick = () => window.location.href = data.shortlink;
+                
+                // Show a small instruction
+                const tip = document.createElement('p');
+                tip.className = "text-[10px] text-blue-400 mt-2 animate-pulse";
+                tip.innerText = "Click the button again to continue to the shortlink.";
+                btn.parentNode.appendChild(tip);
             }
+        } catch (e) {
+            alert("Connection Error.");
+            btn.innerText = "GENERATE SHORTLINK";
+            btn.disabled = false;
         }
-    </script>
+    }
+</script>
 </body>
 </html>
