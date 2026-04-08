@@ -3,61 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PRINZVAN | License Center</title>
+    <title>PRINZVAN ULTIMATE | Auth Center</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { background-color: #0b0f1a; color: #f8fafc; font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-        .glass { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .btn-glow { background: linear-gradient(135deg, #2563eb, #3b82f6); box-shadow: 0 0 20px rgba(37, 99, 235, 0.4); }
-        .key-box { border: 1px dashed #3b82f6; background: rgba(59, 130, 246, 0.05); }
-        .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
+        
+        :root {
+            --primary: #3b82f6;
+            --accent: #10b981;
+            --bg-dark: #05070a;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(59, 130, 246, 0.15) 0%, transparent 25%),
+                radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.1) 0%, transparent 25%);
+            color: #f8fafc;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .glass-card {
+            background: rgba(13, 17, 23, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .btn-premium {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-premium:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.5);
+            filter: brightness(1.1);
+        }
+
+        .btn-premium:active { transform: translateY(0); }
+
+        .key-display {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px dashed rgba(59, 130, 246, 0.4);
+            letter-spacing: 0.15em;
+        }
+
+        .shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
-<body class="p-6">
+<body class="flex items-center justify-center p-4">
 
-    <div class="w-full max-w-md">
-        <div class="glass rounded-[32px] p-8 text-center shadow-2xl border border-white/5">
-            
-            <div id="statusIcon" class="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <i class="fa-solid fa-bolt text-3xl text-blue-500"></i>
+    <div class="w-full max-w-[440px] fade-in">
+        <div class="text-center mb-8">
+            <h2 class="text-xs font-black tracking-[0.3em] text-blue-500 uppercase mb-2">System Access</h2>
+            <h1 class="text-3xl font-extrabold tracking-tight">PRINZVAN<span class="text-blue-500">ULTIMATE</span></h1>
+        </div>
+
+        <div class="glass-card rounded-[40px] p-8 md:p-10 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 shimmer"></div>
+
+            <div id="statusIcon" class="w-24 h-24 bg-blue-500/10 rounded-3xl flex items-center justify-center mx-auto mb-8 transition-all duration-500">
+                <i class="fa-solid fa-microchip text-4xl text-blue-500"></i>
             </div>
 
-            <h1 id="title" class="text-2xl font-bold mb-2">Free 24h Access</h1>
-            <p id="description" class="text-slate-400 text-sm mb-8">Complete the shortlink to generate your key.</p>
-
-            <div id="generateSection" class="space-y-4">
-                <button onclick="handleFlow()" id="mainBtn" class="w-full btn-glow text-white font-bold py-4 rounded-xl transition-all">
-                    GENERATE SHORTLINK
-                </button>
-                <p id="tip" class="text-[10px] text-blue-400 hidden mt-4 animate-pulse uppercase tracking-widest">Click again to proceed</p>
-            </div>
-
-            <div id="successSection" class="hidden">
-                <div class="key-box p-5 rounded-2xl font-mono text-2xl text-white tracking-widest mb-4">
-                    <span id="keyText">-------</span>
-                </div>
-                <button onclick="copyKey()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg">
-                    COPY LICENSE KEY
-                </button>
-                <p class="text-[10px] text-amber-500 mt-4 font-bold uppercase tracking-tighter animate-pulse-slow">
-                    ⚠️ DO NOT REFRESH. Copy the key now.
+            <div class="text-center space-y-2 mb-10">
+                <h2 id="title" class="text-2xl font-bold tracking-tight">License Generator</h2>
+                <p id="description" class="text-slate-400 text-sm leading-relaxed">
+                    Verify your session via the secure shortlink to obtain your 24h access key.
                 </p>
             </div>
 
+            <div id="generateSection" class="space-y-6">
+                <div class="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-3">
+                    <div class="flex items-center gap-3 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                        <i class="fa-solid fa-shield-halved text-blue-500"></i>
+                        <span>Security Protocol</span>
+                    </div>
+                    <ul class="text-xs text-slate-400 space-y-2">
+                        <li class="flex items-center gap-2">
+                            <i class="fa-solid fa-circle-check text-[10px] text-emerald-500"></i>
+                            Anti-Canary Protection Active
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <i class="fa-solid fa-circle-check text-[10px] text-emerald-500"></i>
+                            Single-Device (HWID) Locking
+                        </li>
+                    </ul>
+                </div>
+
+                <button onclick="handleFlow()" id="mainBtn" class="w-full btn-premium text-white font-bold py-5 rounded-2xl flex items-center justify-center gap-3 group">
+                    <span>INITIALIZE LINK</span>
+                    <i class="fa-solid fa-arrow-right text-sm group-hover:translate-x-1 transition-transform"></i>
+                </button>
+                
+                <p id="tip" class="text-[10px] text-blue-400 text-center font-bold hidden animate-pulse uppercase tracking-widest">
+                    Link ready! Click again to proceed
+                </p>
+            </div>
+
+            <div id="successSection" class="hidden space-y-8 fade-in">
+                <div class="key-display p-6 rounded-2xl text-center shadow-inner group relative">
+                    <span id="keyText" class="text-xl md:text-2xl text-white font-medium">-------</span>
+                    <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-tighter">Your Key</div>
+                </div>
+
+                <div class="space-y-3">
+                    <button onclick="copyKey()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-5 rounded-2xl transition-all shadow-lg flex items-center justify-center gap-3">
+                        <i class="fa-solid fa-copy"></i>
+                        <span>COPY TO CLIPBOARD</span>
+                    </button>
+                    <p class="text-[10px] text-amber-500 text-center font-bold uppercase tracking-wider">
+                        <i class="fa-solid fa-triangle-exclamation mr-1"></i> Do not refresh page
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-10 text-center">
+            <p class="text-[11px] text-slate-500 font-medium uppercase tracking-[0.4em]">
+                Protected by Prinzvan Auth v4.0
+            </p>
         </div>
     </div>
 
     <script>
         let readyLink = "";
 
-        // Obfuscation: Unscramble the payload from verify-claim.js
         function demask(payload) {
             try {
                 const reversed = payload.split('').reverse().join('');
                 return atob(reversed);
-            } catch (e) { return "INVALID_PAYLOAD"; }
+            } catch (e) { return "ERROR_KEY"; }
         }
 
         window.onload = async () => {
@@ -65,13 +162,12 @@
             const urlKey = urlParams.get('key');
 
             if (urlKey) {
-                // 1. IMMEDIATELY clean the URL bar [Invisible Mode]
                 window.history.replaceState({}, document.title, window.location.pathname);
-
-                // 2. Start Verification UI
+                
                 document.getElementById('generateSection').classList.add('hidden');
-                document.getElementById('title').innerText = "Securing Connection...";
-                document.getElementById('description').innerText = "Verifying your shortlink completion...";
+                document.getElementById('statusIcon').className = "w-24 h-24 bg-blue-500/10 rounded-3xl flex items-center justify-center mx-auto mb-8 animate-pulse";
+                document.getElementById('title').innerText = "Authenticating...";
+                document.getElementById('description').innerText = "Validating link integrity and decryption tokens.";
 
                 try {
                     const res = await fetch(`/api/verify-claim?key=${urlKey}`);
@@ -81,7 +177,7 @@
                         const realKey = demask(data.payload);
                         showSuccessMode(realKey);
                     } else {
-                        alert("Security Violation: Bypass or Expired Link.");
+                        alert("Session Expired or Bypass Detected.");
                         window.location.replace('/keygen.html');
                     }
                 } catch (e) {
@@ -95,23 +191,23 @@
             const tip = document.getElementById('tip');
             if (readyLink) { window.location.href = readyLink; return; }
 
-            btn.innerText = "REQUESTING...";
             btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> <span>GENERATING...</span>';
 
             try {
                 const res = await fetch('/api/keygen', { method: 'POST' });
                 const data = await res.json();
                 if (data.shortlink) {
                     readyLink = data.shortlink;
-                    btn.innerText = "PROCEED TO LINK";
-                    btn.classList.replace('btn-glow', 'bg-blue-600');
                     btn.disabled = false;
+                    btn.innerHTML = '<span>OPEN SHORTLINK</span> <i class="fa-solid fa-external-link text-xs"></i>';
+                    btn.classList.replace('btn-premium', 'bg-blue-600');
                     tip.classList.remove('hidden');
                 }
             } catch (e) {
-                alert("Error connecting to server.");
-                btn.innerText = "GENERATE SHORTLINK";
+                alert("Server Connection Failed.");
                 btn.disabled = false;
+                btn.innerHTML = '<span>INITIALIZE LINK</span>';
             }
         }
 
@@ -119,18 +215,25 @@
             document.getElementById('generateSection').classList.add('hidden');
             document.getElementById('successSection').classList.remove('hidden');
             
-            document.getElementById('statusIcon').innerHTML = '<i class="fa-solid fa-shield-check text-3xl text-green-500"></i>';
-            document.getElementById('statusIcon').className = "w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6";
+            const icon = document.getElementById('statusIcon');
+            icon.innerHTML = '<i class="fa-solid fa-user-shield text-4xl text-emerald-500"></i>';
+            icon.className = "w-24 h-24 bg-emerald-500/10 rounded-3xl flex items-center justify-center mx-auto mb-8 scale-110";
             
-            document.getElementById('title').innerText = "Verified!";
-            document.getElementById('description').innerText = "License generated successfully.";
+            document.getElementById('title').innerText = "Access Granted";
+            document.getElementById('description').innerText = "Validation successful. Your key is ready for use.";
             document.getElementById('keyText').innerText = key;
         }
 
         function copyKey() {
             const text = document.getElementById('keyText').innerText;
             navigator.clipboard.writeText(text);
-            alert("Key copied! Do not close this page until it is pasted.");
+            const btn = event.currentTarget;
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> <span>COPIED SUCCESSFULLY!</span>';
+            btn.classList.replace('bg-emerald-600', 'bg-emerald-700');
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fa-solid fa-copy"></i> <span>COPY TO CLIPBOARD</span>';
+                btn.classList.replace('bg-emerald-700', 'bg-emerald-600');
+            }, 2000);
         }
     </script>
 </body>
