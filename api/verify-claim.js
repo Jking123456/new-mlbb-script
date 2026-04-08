@@ -8,42 +8,40 @@ const redis = new Redis({
 export default async function handler(req, res) {
   const { token } = req.query;
 
-  // Security Referer Check
+  // 1. SECURITY HEADERS CHECK
   const referer = req.headers['referer'];
-  if (!referer || !referer.includes("new-mlbb-script.vercel.app")) {
-    return res.status(403).json({ error: "Direct access forbidden" });
+  const allowedHost = "new-mlbb-script.vercel.app";
+  if (!referer || !referer.includes(allowedHost)) {
+    return res.status(403).json({ error: "Direct Access Forbidden" });
   }
 
   if (!token) return res.status(400).json({ error: "Missing Token" });
 
   try {
-    // 1. Get the temp token data (which has the deviceId from keygen)
+    // 2. VALIDATE TEMP SESSION
     const tempData = await redis.get(`temp_${token}`);
     if (!tempData || !tempData.deviceId) {
-        return res.status(403).json({ error: "Invalid Session or Token Expired" });
+        return res.status(403).json({ error: "Session Expired or Invalid" });
     }
 
     const { deviceId } = tempData;
-
-    // 2. Generate the FINAL PRZ Key
     const finalKey = "PRZ-FREE-" + Math.random().toString(36).substring(2, 8).toUpperCase();
     
-    // Save the key with activated: false
+    // 3. SAVE LICENSE KEY (Expires in 24h)
     await redis.set(finalKey, { 
         activated: false, 
         duration: 86400,
-        isPremium: true,
         deviceId: deviceId 
-    });
+    }, { ex: 86400 });
 
-    // 3. SET THE PERMANENT DEVICE LOCK
-    // This links this Phone ID to this specific Key Name
-    await redis.set(`device_lock:${deviceId}`, finalKey);
+    // 4. SET THE 24-HOUR DEVICE LOCK
+    // The device cannot generate another key until this record expires (86400s)
+    await redis.set(`device_lock:${deviceId}`, finalKey, { ex: 86400 });
     
-    // 4. Cleanup: Remove the temporary session token
+    // 5. CLEANUP
     await redis.del(`temp_${token}`);
 
-    // Mask the key (Reverse + Base64) for frontend delivery
+    // Mask for delivery (Reverse + Base64)
     const masked = Buffer.from(finalKey).toString('base64').split('').reverse().join('');
 
     return res.status(200).json({ 
@@ -52,7 +50,7 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error(error);
     return res.status(500).json({ error: "Server Error" });
   }
 }
+
