@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PRINZVAN | Get Key</title>
+    <title>PRINZVAN | License Center</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -11,67 +11,99 @@
         body { background-color: #0b0f1a; color: #f8fafc; font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
         .glass { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
         .btn-glow { background: linear-gradient(135deg, #2563eb, #3b82f6); box-shadow: 0 0 20px rgba(37, 99, 235, 0.4); }
+        .key-glow { border: 1px dashed #3b82f6; background: rgba(59, 130, 246, 0.05); }
     </style>
 </head>
 <body class="p-6">
+
     <div class="w-full max-w-md">
         <div class="glass rounded-[32px] p-8 text-center shadow-2xl border border-white/5">
-            <div id="genIcon" class="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            
+            <div id="statusIcon" class="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
                 <i class="fa-solid fa-bolt text-3xl text-blue-500"></i>
             </div>
 
-            <h1 class="text-2xl font-bold mb-2">Free 24h Access</h1>
-            <p class="text-slate-400 text-sm mb-8">Generate a license key to access the script features.</p>
+            <h1 id="title" class="text-2xl font-bold mb-2">Free 24h Access</h1>
+            <p id="description" class="text-slate-400 text-sm mb-8">Generate a key by completing the shortlink below.</p>
 
             <div class="space-y-4">
-                <div id="resultBox" class="hidden mb-6">
-                    <p class="text-[10px] font-bold text-blue-400 uppercase mb-2">Your License Key</p>
-                    <div id="keyDisplay" onclick="copyKey()" class="bg-white/5 border border-blue-500/30 p-4 rounded-2xl font-mono text-xl text-white cursor-pointer hover:bg-blue-500/10 transition">
-                        -------
+                <div id="successSection" class="hidden">
+                    <div class="key-glow p-5 rounded-2xl font-mono text-2xl text-white tracking-widest mb-6 select-all">
+                        <span id="keyText">-------</span>
                     </div>
-                    <p class="text-[10px] text-slate-500 mt-2">Click the key to copy</p>
+                    <button onclick="copyKey()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-green-900/20">
+                        <i class="fa-solid fa-copy mr-2"></i> COPY KEY
+                    </button>
+                    <p class="text-[10px] text-slate-500 mt-4">Paste this key into your script to start.</p>
                 </div>
 
-                <button onclick="generateNow()" id="genBtn" class="w-full btn-glow text-white font-bold py-4 rounded-xl transition-all">
-                    GENERATE KEY
-                </button>
+                <div id="generateSection">
+                    <button onclick="handleFlow()" id="mainBtn" class="w-full btn-glow text-white font-bold py-4 rounded-xl transition-all">
+                        GENERATE SHORTLINK
+                    </button>
+                    <p id="tip" class="text-[10px] text-blue-400 hidden mt-4 animate-pulse uppercase tracking-widest">Click again to proceed</p>
+                </div>
             </div>
 
-            <p class="text-[10px] text-slate-600 mt-10 uppercase tracking-widest">Prinzvan Ultimate • Local Auth</p>
+            <p class="text-[10px] text-slate-600 mt-10 uppercase tracking-widest">Prinzvan Ultimate • Unified Auth</p>
         </div>
     </div>
 
     <script>
-        async function generateNow() {
-            const btn = document.getElementById('genBtn');
-            const resultBox = document.getElementById('resultBox');
-            const keyDisplay = document.getElementById('keyDisplay');
-            
-            btn.innerText = "GENERATING...";
+        let readyLink = "";
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlKey = urlParams.get('key');
+
+        // Check on Page Load
+        window.onload = () => {
+            if (urlKey) {
+                showSuccessMode(urlKey);
+            }
+        };
+
+        async function handleFlow() {
+            const btn = document.getElementById('mainBtn');
+            const tip = document.getElementById('tip');
+
+            if (readyLink) {
+                window.location.href = readyLink;
+                return;
+            }
+
+            btn.innerText = "PREPARING LINK...";
             btn.disabled = true;
 
             try {
                 const res = await fetch('/api/keygen', { method: 'POST' });
                 const data = await res.json();
                 
-                if (data.key) {
-                    keyDisplay.innerText = data.key;
-                    resultBox.classList.remove('hidden');
-                    btn.innerText = "GENERATE ANOTHER";
+                if (data.shortlink) {
+                    readyLink = data.shortlink;
+                    btn.innerText = "PROCEED TO LINK";
+                    btn.classList.replace('btn-glow', 'bg-blue-600');
                     btn.disabled = false;
-                    // Change icon to success
-                    document.getElementById('genIcon').innerHTML = '<i class="fa-solid fa-check text-3xl text-green-500"></i>';
+                    tip.classList.remove('hidden');
                 }
             } catch (e) {
-                alert("Error generating key.");
-                btn.innerText = "GENERATE KEY";
+                alert("Error. Try again.");
+                btn.innerText = "GENERATE SHORTLINK";
                 btn.disabled = false;
             }
         }
 
+        function showSuccessMode(key) {
+            document.getElementById('generateSection').classList.add('hidden');
+            document.getElementById('successSection').classList.remove('hidden');
+            document.getElementById('statusIcon').innerHTML = '<i class="fa-solid fa-check-double text-3xl text-green-500"></i>';
+            document.getElementById('statusIcon').className = "w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6";
+            document.getElementById('title').innerText = "Key Claimed!";
+            document.getElementById('description').innerText = "Your 24-hour license is ready to use.";
+            document.getElementById('keyText').innerText = key;
+        }
+
         function copyKey() {
-            const key = document.getElementById('keyDisplay').innerText;
-            navigator.clipboard.writeText(key);
+            const text = document.getElementById('keyText').innerText;
+            navigator.clipboard.writeText(text);
             alert("Key copied to clipboard!");
         }
     </script>
