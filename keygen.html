@@ -11,41 +11,37 @@
         body { background-color: #0b0f1a; color: #f8fafc; font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
         .glass { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
         .btn-glow { background: linear-gradient(135deg, #2563eb, #3b82f6); box-shadow: 0 0 20px rgba(37, 99, 235, 0.4); }
-        .key-glow { border: 1px dashed #3b82f6; background: rgba(59, 130, 246, 0.05); }
+        .key-box { border: 1px dashed #3b82f6; background: rgba(59, 130, 246, 0.05); }
     </style>
 </head>
 <body class="p-6">
 
     <div class="w-full max-w-md">
-        <div class="glass rounded-[32px] p-8 text-center shadow-2xl border border-white/5">
+        <div id="mainCard" class="glass rounded-[32px] p-8 text-center shadow-2xl border border-white/5">
             
             <div id="statusIcon" class="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
                 <i class="fa-solid fa-bolt text-3xl text-blue-500"></i>
             </div>
 
             <h1 id="title" class="text-2xl font-bold mb-2">Free 24h Access</h1>
-            <p id="description" class="text-slate-400 text-sm mb-8">Generate a key by completing the shortlink below.</p>
+            <p id="description" class="text-slate-400 text-sm mb-8">Generate a key by completing the shortlink.</p>
 
-            <div class="space-y-4">
-                <div id="successSection" class="hidden">
-                    <div class="key-glow p-5 rounded-2xl font-mono text-2xl text-white tracking-widest mb-6 select-all">
-                        <span id="keyText">-------</span>
-                    </div>
-                    <button onclick="copyKey()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-green-900/20">
-                        <i class="fa-solid fa-copy mr-2"></i> COPY KEY
-                    </button>
-                    <p class="text-[10px] text-slate-500 mt-4">Paste this key into your script to start.</p>
-                </div>
-
-                <div id="generateSection">
-                    <button onclick="handleFlow()" id="mainBtn" class="w-full btn-glow text-white font-bold py-4 rounded-xl transition-all">
-                        GENERATE SHORTLINK
-                    </button>
-                    <p id="tip" class="text-[10px] text-blue-400 hidden mt-4 animate-pulse uppercase tracking-widest">Click again to proceed</p>
-                </div>
+            <div id="generateSection" class="space-y-4">
+                <button onclick="handleFlow()" id="mainBtn" class="w-full btn-glow text-white font-bold py-4 rounded-xl transition-all">
+                    GENERATE SHORTLINK
+                </button>
+                <p id="tip" class="text-[10px] text-blue-400 hidden mt-4 animate-pulse uppercase tracking-widest">Click again to proceed</p>
             </div>
 
-            <p class="text-[10px] text-slate-600 mt-10 uppercase tracking-widest">Prinzvan Ultimate • Unified Auth</p>
+            <div id="successSection" class="hidden">
+                <div class="key-box p-5 rounded-2xl font-mono text-2xl text-white tracking-widest mb-6 select-all">
+                    <span id="keyText">-------</span>
+                </div>
+                <button onclick="copyKey()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg">
+                    <i class="fa-solid fa-copy mr-2"></i> COPY KEY
+                </button>
+            </div>
+
         </div>
     </div>
 
@@ -54,10 +50,27 @@
         const urlParams = new URLSearchParams(window.location.search);
         const urlKey = urlParams.get('key');
 
-        // Check on Page Load
-        window.onload = () => {
+        // Security Check on Load
+        window.onload = async () => {
             if (urlKey) {
-                showSuccessMode(urlKey);
+                // Initializing Verification State
+                document.getElementById('generateSection').classList.add('hidden');
+                document.getElementById('title').innerText = "Verifying Link...";
+                document.getElementById('description').innerText = "Please wait while we validate your access.";
+
+                try {
+                    const res = await fetch(`/api/verify-claim?key=${urlKey}`);
+                    const data = await res.json();
+
+                    if (data.success) {
+                        showSuccessMode(data.key);
+                    } else {
+                        alert("Bypass Detected or Expired Link!");
+                        window.location.replace('/keygen.html');
+                    }
+                } catch (e) {
+                    window.location.replace('/keygen.html');
+                }
             }
         };
 
@@ -70,7 +83,7 @@
                 return;
             }
 
-            btn.innerText = "PREPARING LINK...";
+            btn.innerText = "REQUESTING...";
             btn.disabled = true;
 
             try {
@@ -85,7 +98,7 @@
                     tip.classList.remove('hidden');
                 }
             } catch (e) {
-                alert("Error. Try again.");
+                alert("Server Error. Try again.");
                 btn.innerText = "GENERATE SHORTLINK";
                 btn.disabled = false;
             }
@@ -94,17 +107,19 @@
         function showSuccessMode(key) {
             document.getElementById('generateSection').classList.add('hidden');
             document.getElementById('successSection').classList.remove('hidden');
+            
             document.getElementById('statusIcon').innerHTML = '<i class="fa-solid fa-check-double text-3xl text-green-500"></i>';
             document.getElementById('statusIcon').className = "w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6";
-            document.getElementById('title').innerText = "Key Claimed!";
-            document.getElementById('description').innerText = "Your 24-hour license is ready to use.";
+            
+            document.getElementById('title').innerText = "Access Granted!";
+            document.getElementById('description').innerText = "Your 24-hour license is ready.";
             document.getElementById('keyText').innerText = key;
         }
 
         function copyKey() {
             const text = document.getElementById('keyText').innerText;
             navigator.clipboard.writeText(text);
-            alert("Key copied to clipboard!");
+            alert("Key copied! Paste it in the script.");
         }
     </script>
 </body>
