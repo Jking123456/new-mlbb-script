@@ -6,41 +6,42 @@ const redis = new Redis({
 })
 
 export default async function handler(req, res) {
-  const { key } = req.query;
+  const { token } = req.query;
+  const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
-  // 1. SECURE REFERER CHECK
-  // Only allow requests that originate from your specific frontend
+  // Security Headers
   const referer = req.headers['referer'];
-  const allowedHost = "new-mlbb-script.vercel.app";
-
-  if (!referer || !referer.includes(allowedHost)) {
-    return res.status(403).json({ error: "Direct Access Forbidden" });
+  if (!referer || !referer.includes("new-mlbb-script.vercel.app")) {
+    return res.status(403).json({ error: "Direct access forbidden" });
   }
 
-  // 2. SEC-FETCH CHECK (Modern Browser Security)
-  // Ensures the request is a 'cross-site' fetch initiated by your JS
-  if (req.headers['sec-fetch-site'] && req.headers['sec-fetch-site'] !== 'same-origin') {
-    return res.status(403).json({ error: "Unauthorized Request Origin" });
-  }
-
-  // 3. Anti-Proxy / Anti-Canary Check
-  const via = req.headers['via'];
-  const proxy = req.headers['proxy-connection'] || req.headers['x-forwarded-proto'] === 'http';
-  if (via || proxy) {
-    return res.status(403).json({ error: "Proxy Detected" });
-  }
-
-  if (!key) return res.status(400).json({ error: "Missing key" });
+  if (!token) return res.status(400).json({ error: "Missing Token" });
 
   try {
-    const data = await redis.get(key);
-
-    if (!data || data.activated === true) {
-      return res.status(403).json({ error: "Bypass Detected" });
+    // 1. Verify the Temp Token
+    const tempData = await redis.get(`temp_${token}`);
+    if (!tempData) {
+      return res.status(403).json({ error: "Expired or Invalid Session" });
     }
 
-    // OBFUSCATION: Reverse + Base64
-    const masked = Buffer.from(key).toString('base64').split('').reverse().join('');
+    // 2. Generate the REAL License Key
+    const finalKey = "PRZ-FREE-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+    
+    // Save final key data
+    await redis.set(finalKey, { 
+        activated: false, 
+        duration: 86400,
+        isPremium: false 
+    });
+
+    // LOCK THE IP to this new key
+    await redis.set(`ip_lock:${ip}`, finalKey);
+    
+    // 3. Destroy the temp token so it can't be used twice
+    await redis.del(`temp_${token}`);
+
+    // Obfuscate for UI safety (Reverse + Base64)
+    const masked = Buffer.from(finalKey).toString('base64').split('').reverse().join('');
 
     return res.status(200).json({ 
         success: true, 
@@ -50,4 +51,5 @@ export default async function handler(req, res) {
   } catch (error) {
     return res.status(500).json({ error: "Server Error" });
   }
-}
+      }
+      
