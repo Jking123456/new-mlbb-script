@@ -20,7 +20,7 @@ export default async function handler(req, res) {
     // 1. Get the temp token data (which has the deviceId from keygen)
     const tempData = await redis.get(`temp_${token}`);
     if (!tempData || !tempData.deviceId) {
-        return res.status(403).json({ error: "Invalid Session or Token Expired" });
+        return res.status(403).json({ error: "Contact the Admin to retrieve your Key" });
     }
 
     const { deviceId } = tempData;
