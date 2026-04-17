@@ -16,7 +16,7 @@ export default async function handler(req, res) {
 
     // 2. LOADER INTEGRITY CHECK
     // Replace '12345' with the exact byte size of your obfuscated .lua file
-    const EXPECTED_SIZE = "12345"; 
+    const EXPECTED_SIZE = "11675"; 
     if (size !== EXPECTED_SIZE) {
         console.warn(`Tamper Detected: Received size ${size} instead of ${EXPECTED_SIZE}`);
         return res.status(403).send("LOADER_TAMPERED");
