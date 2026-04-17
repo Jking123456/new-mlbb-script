@@ -15,29 +15,36 @@ export default async function handler(req, res) {
     }
 
     // 2. LOADER INTEGRITY CHECK
-    // CRITICAL: Ensure this matches the toast on your screen exactly.
-    // Use quotes to ensure string comparison.
     const EXPECTED_SIZE = "11506"; 
     if (String(size) !== EXPECTED_SIZE) {
       console.log(`Size Mismatch: Got ${size}, Expected ${EXPECTED_SIZE}`);
       return res.status(403).send("LOADER_TAMPERED");
     }
 
-    // 3. KEY DATA RETRIEVAL
-    const keyData = await redis.get(key);
+    // 3. KEY DATA RETRIEVAL & PARSING
+    let keyData = await redis.get(key);
     if (!keyData) {
       return res.status(403).send("INVALID_OR_EXPIRED");
     }
 
+    // FIX: Convert String from Redis into a usable JSON Object
+    if (typeof keyData === 'string') {
+      try {
+        keyData = JSON.parse(keyData);
+      } catch (e) {
+        console.error("JSON Parsing Error:", e);
+        return res.status(500).send("DB_FORMAT_ERROR");
+      }
+    }
+
     // 4. ACTIVATION LOGIC
-    // Handle cases where activated might be undefined or false
     if (keyData.activated === false || keyData.activated === undefined) {
       keyData.activated = true;
       const duration = parseInt(keyData.duration) || 86400;
       
-      // Save activation and set expiry for the key
+      // Update the key in Redis to be activated with its TTL
       await redis.set(key, keyData, { ex: duration });
-      // Set expiry for the HWID set associated with this key
+      // Sync HWID list expiration
       await redis.expire(`hwids:${key}`, duration);
     }
 
@@ -69,7 +76,8 @@ export default async function handler(req, res) {
 
     if (!githubResponse.ok) {
       console.error(`Github Error: ${githubResponse.status}`);
-      return res.status(500).send("FAILED_TO_FETCH_SCRIPT");
+      // If GitHub fails, we send a specific error to debug
+      return res.status(500).send("GITHUB_FETCH_FAILED");
     }
 
     const scriptContent = await githubResponse.text();
@@ -78,11 +86,11 @@ export default async function handler(req, res) {
     res.setHeader('X-Script-Status', statusMessage);
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     
-    // Send 200 explicitly
     return res.status(200).send(scriptContent);
 
   } catch (error) {
     console.error("Server Error:", error);
     return res.status(500).send("INTERNAL_SERVER_ERROR");
   }
-  }
+}
+  
