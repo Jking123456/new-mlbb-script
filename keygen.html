@@ -160,10 +160,44 @@
             document.getElementById('keyText').innerText = key;
         }
 
-        function copyKey() {
-            navigator.clipboard.writeText(document.getElementById('keyText').innerText);
-            alert("Key copied!");
+        async function copyKey() {
+    const key = document.getElementById('keyText').innerText;
+    const btn = event.currentTarget; // Gets the button clicked
+    const originalContent = btn.innerHTML;
+
+    try {
+        // Primary method: Modern Clipboard API
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(key);
+        } else {
+            // Fallback method: ExecCommand
+            const textArea = document.createElement("textarea");
+            textArea.value = key;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            textArea.style.top = "0";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            document.execCommand('copy');
+            textArea.remove();
         }
+
+        // Visual Feedback (Better than alert)
+        btn.innerHTML = '<i class="fa-solid fa-check"></i><span>COPIED!</span>';
+        btn.classList.replace('bg-emerald-600', 'bg-blue-600');
+        
+        setTimeout(() => {
+            btn.innerHTML = originalContent;
+            btn.classList.replace('bg-blue-600', 'bg-emerald-600');
+        }, 2000);
+
+    } catch (err) {
+        console.error('Failed to copy: ', err);
+        alert("Manual copy required: " + key);
+    }
+}
+
     </script>
 </body>
 </html>
