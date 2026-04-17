@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     }
 
     // 2. LOADER INTEGRITY CHECK
-    const EXPECTED_SIZE = "11506"; 
+    const EXPECTED_SIZE = "11481"; 
     if (String(size) !== EXPECTED_SIZE) {
       console.log(`Size Mismatch: Got ${size}, Expected ${EXPECTED_SIZE}`);
       return res.status(403).send("LOADER_TAMPERED");
