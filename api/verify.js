@@ -12,7 +12,7 @@ export default async function handler(req, res) {
     if (!key || !hwid || !size) return res.status(400).send("ERR_MISSING_PARAMS");
 
     // 1. SIZE CHECK
-    const EXPECTED_SIZE = "11506"; 
+    const EXPECTED_SIZE = "11481"; 
     if (String(size) !== EXPECTED_SIZE) {
       return res.status(403).send("ERR_SIZE_MISMATCH_" + size);
     }
