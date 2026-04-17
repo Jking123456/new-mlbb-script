@@ -9,63 +9,42 @@ export default async function handler(req, res) {
   try {
     const { key, hwid, size } = req.query;
 
-    // 1. Check for missing parameters
-    if (!key || !hwid || !size) {
-      return res.status(400).send("MISSING_PARAMS");
-    }
+    if (!key || !hwid || !size) return res.status(400).send("ERR_MISSING_PARAMS");
 
-    // 2. LOADER INTEGRITY CHECK
-    const EXPECTED_SIZE = "11481"; 
+    // 1. SIZE CHECK
+    const EXPECTED_SIZE = "11506"; 
     if (String(size) !== EXPECTED_SIZE) {
-      console.log(`Size Mismatch: Got ${size}, Expected ${EXPECTED_SIZE}`);
-      return res.status(403).send("LOADER_TAMPERED");
+      return res.status(403).send("ERR_SIZE_MISMATCH_" + size);
     }
 
-    // 3. KEY DATA RETRIEVAL & PARSING
-    let keyData = await redis.get(key);
-    if (!keyData) {
-      return res.status(403).send("INVALID_OR_EXPIRED");
+    // 2. REDIS CHECK
+    let keyData;
+    try {
+        keyData = await redis.get(key);
+    } catch (e) {
+        return res.status(500).send("ERR_REDIS_CONNECTION");
     }
 
-    // FIX: Convert String from Redis into a usable JSON Object
+    if (!keyData) return res.status(403).send("ERR_KEY_NOT_FOUND");
+
+    // Auto-parse if string
     if (typeof keyData === 'string') {
-      try {
-        keyData = JSON.parse(keyData);
-      } catch (e) {
-        console.error("JSON Parsing Error:", e);
-        return res.status(500).send("DB_FORMAT_ERROR");
-      }
+      try { keyData = JSON.parse(keyData); } catch (e) { return res.status(500).send("ERR_JSON_PARSE"); }
     }
 
-    // 4. ACTIVATION LOGIC
-    if (keyData.activated === false || keyData.activated === undefined) {
-      keyData.activated = true;
-      const duration = parseInt(keyData.duration) || 86400;
-      
-      // Update the key in Redis to be activated with its TTL
-      await redis.set(key, keyData, { ex: duration });
-      // Sync HWID list expiration
-      await redis.expire(`hwids:${key}`, duration);
-    }
-
-    // 5. HWID MANAGEMENT
+    // 3. HWID LOCK
     const isRegistered = await redis.sismember(`hwids:${key}`, hwid);
     if (!isRegistered) {
       const currentDevices = await redis.scard(`hwids:${key}`);
-      const limit = parseInt(keyData.limit) || 1;
-
-      if (currentDevices >= limit) {
-        return res.status(403).send("DEVICE_LIMIT_REACHED");
+      if (currentDevices >= (parseInt(keyData.limit) || 1)) {
+        return res.status(403).send("ERR_HWID_LIMIT");
       }
       await redis.sadd(`hwids:${key}`, hwid);
     }
 
-    // 6. SCRIPT SELECTION
-    let scriptFileName = keyData.isPremium ? "kupalka.lua" : "main2.lua";
-    let statusMessage = keyData.isPremium ? "Premium Version" : "Free Version";
-
-    // 7. FETCH FROM GITHUB
-    const githubUrl = `https://raw.githubusercontent.com/Jking123456/mlbb-maphack-drone/main/${scriptFileName}`;
+    // 4. GITHUB FETCH
+    const scriptName = keyData.isPremium ? "kupalka.lua" : "main2.lua";
+    const githubUrl = `https://raw.githubusercontent.com/Jking123456/mlbb-maphack-drone/main/${scriptName}`;
     
     const githubResponse = await fetch(githubUrl, {
       headers: {
@@ -75,22 +54,14 @@ export default async function handler(req, res) {
     });
 
     if (!githubResponse.ok) {
-      console.error(`Github Error: ${githubResponse.status}`);
-      // If GitHub fails, we send a specific error to debug
-      return res.status(500).send("GITHUB_FETCH_FAILED");
+      return res.status(403).send("ERR_GITHUB_AUTH_" + githubResponse.status);
     }
 
     const scriptContent = await githubResponse.text();
-
-    // 8. FINAL RESPONSE
-    res.setHeader('X-Script-Status', statusMessage);
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    
+    res.setHeader('Content-Type', 'text/plain');
     return res.status(200).send(scriptContent);
 
   } catch (error) {
-    console.error("Server Error:", error);
-    return res.status(500).send("INTERNAL_SERVER_ERROR");
+    return res.status(500).send("ERR_SERVER_CRASH");
   }
 }
-  
