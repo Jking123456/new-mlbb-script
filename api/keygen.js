@@ -5,8 +5,8 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN,
 })
 
-// Replace with your actual ShrinkMe API Key
-const SHRINKME_API_KEY = "YOUR_SHRINKME_API_KEY_HERE"; 
+// Your specific ShrinkMe Token applied here
+const SHRINKME_API_KEY = "1de83a40a7f0f1ec1c3a7bce28d9b9af26e399fd"; 
 
 export default async function handler(req, res) {
   
@@ -16,15 +16,18 @@ export default async function handler(req, res) {
       const { deviceId } = req.body;
       if (!deviceId) return res.status(400).json({ error: "MISSING_ID" });
 
-      // Check if they already have an active key to prevent double-skipping
+      // Check Redis for active session to prevent spam
       const activeKey = await redis.get(`active_key:${deviceId}`);
       if (activeKey) {
         return res.status(403).json({ pendingKey: activeKey, error: "ALREADY_HAS_KEY" });
       }
 
-      // Generate the ShrinkMe URL
+      // Generate the URL that the user returns to after the ads
       const host = req.headers.host;
-      const destinationUrl = `https://${host}/keygen.html?token=${deviceId}`;
+      const protocol = host.includes('localhost') ? 'http' : 'https';
+      const destinationUrl = `${protocol}://${host}/keygen.html?token=${deviceId}`;
+      
+      // Construct the final ShrinkMe API link
       const shortlink = `https://shrinkme.io/st?api=${SHRINKME_API_KEY}&url=${encodeURIComponent(destinationUrl)}`;
 
       return res.status(200).json({ success: true, shortlink: shortlink });
@@ -33,13 +36,13 @@ export default async function handler(req, res) {
     }
   }
 
-  // --- PART 2: SCRIPT DOWNLOADER (Handle GET from the Game/Injector) ---
+  // --- PART 2: SCRIPT DOWNLOADER (Handle GET from Game/Injector) ---
   try {
     const { key, hwid, size } = req.query;
 
     if (!key || !hwid || !size) return res.status(400).send("ERR_MISSING_PARAMS");
 
-    // 1. SIZE CHECK (Prevents tampering)
+    // 1. SIZE CHECK
     const EXPECTED_SIZE = "66292"; 
     if (String(size) !== EXPECTED_SIZE) {
       return res.status(403).send("ERR_SIZE_MISMATCH_" + size);
@@ -63,7 +66,7 @@ export default async function handler(req, res) {
       await redis.sadd(`hwids:${key}`, hwid);
     }
 
-    // 4. GITHUB FETCH (Download the actual .lua script)
+    // 4. GITHUB FETCH
     const scriptName = keyData.isPremium ? "kupalka.lua" : "main2.lua";
     const githubUrl = `https://raw.githubusercontent.com/Jking123456/mlbb-maphack-drone/main/${scriptName}`;
     
@@ -83,7 +86,6 @@ export default async function handler(req, res) {
     return res.status(200).send(scriptContent);
 
   } catch (error) {
-    console.error(error);
     return res.status(500).send("ERR_SERVER_CRASH");
   }
-}
+    }
