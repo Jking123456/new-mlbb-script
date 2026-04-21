@@ -8,54 +8,43 @@ const redis = new Redis({
 export default async function handler(req, res) {
   const { token } = req.query;
 
-  // 1. Security Check: Prevent direct URL calls
+  // Security Referer Check
   const referer = req.headers['referer'];
-  // Added a check to allow Vercel's internal preview URLs or your main domain
-  if (!referer || (!referer.includes("vercel.app") && !referer.includes("yourdomain.com"))) {
+  if (!referer || !referer.includes("new-mlbb-script.vercel.app")) {
     return res.status(403).json({ error: "Direct access forbidden" });
   }
 
   if (!token) return res.status(400).json({ error: "Missing Token" });
 
   try {
-    // 2. Retrieve temporary session data
-    // This was created when the user clicked 'Initialize'
+    // 1. Get the temp token data (which has the deviceId from keygen)
     const tempData = await redis.get(`temp_${token}`);
-    
-    if (!tempData) {
-        return res.status(403).json({ error: "Session expired or invalid. Please restart the process." });
+    if (!tempData || !tempData.deviceId) {
+        return res.status(403).json({ error: "Contact the Admin to retrieve your Key" });
     }
 
-    // Ensure we have a device identifier to lock to
-    const deviceId = tempData.deviceId || tempData.hwid;
-    if (!deviceId) {
-        return res.status(403).json({ error: "Device identification lost." });
-    }
+    const { deviceId } = tempData;
 
-    // 3. Generate the FINAL PRZ Key
-    // Creates a unique key like: PRZ-FREE-A1B2C3
+    // 2. Generate the FINAL PRZ Key
     const finalKey = "PRZ-FREE-" + Math.random().toString(36).substring(2, 8).toUpperCase();
     
-    // 4. Save the key to Redis with 24h expiry
-    // We set 'limit: 1' to ensure it only works for this specific device
-    await redis.set(finalKey, JSON.stringify({ 
-        activated: true, 
-        limit: 1,
-        isPremium: false,
-        deviceId: deviceId,
-        createdAt: new Date().toISOString()
-    }), { ex: 86400 }); // Expires in 24 hours (86400 seconds)
+    // Save the key with activated: false
+    await redis.set(finalKey, { 
+        activated: false, 
+        duration: 86400,
+        isPremium: true,
+        deviceId: deviceId 
+    });
 
-    // 5. Set Device Lock
-    // This allows keygen.html to "remember" the key if the user refreshes
-    await redis.set(`hwids:${finalKey}`, deviceId);
+    // 3. SET THE PERMANENT DEVICE LOCK
+    // This links this Phone ID to this specific Key Name
+    await redis.set(`device_lock:${deviceId}`, finalKey);
     
-    // 6. Cleanup
+    // 4. Cleanup: Remove the temporary session token
     await redis.del(`temp_${token}`);
 
-    // 7. Mask the key for delivery
-    // (Base64 -> Reverse) to match the 'demask' function in your HTML
-    const masked = btoa(finalKey).split('').reverse().join('');
+    // Mask the key (Reverse + Base64) for frontend delivery
+    const masked = Buffer.from(finalKey).toString('base64').split('').reverse().join('');
 
     return res.status(200).json({ 
         success: true, 
@@ -63,7 +52,7 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error("Verification Error:", error);
-    return res.status(500).json({ error: "Internal Server Error" });
+    console.error(error);
+    return res.status(500).json({ error: "Server Error" });
   }
 }
