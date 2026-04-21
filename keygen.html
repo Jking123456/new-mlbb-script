@@ -122,11 +122,16 @@
                 const result = await fp.get();
                 const visitorId = result.visitorId;
 
-                // 2. Send to API
+                // 2. Send to API - FIXED: Added required 'key' and 'size' fields
                 const res = await fetch('/api/keygen', { 
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ deviceId: visitorId })
+                    body: JSON.stringify({ 
+                        deviceId: visitorId,
+                        hwid: visitorId,
+                        key: "FREE-ACCESS", // Placeholder key for the initialization step
+                        size: "66292"       // Must match EXPECTED_SIZE in your backend
+                    })
                 });
                 
                 const data = await res.json();
@@ -143,9 +148,13 @@
                     btn.innerHTML = '<span>OPEN SHORTLINK</span>';
                     btn.classList.replace('btn-premium', 'bg-blue-600');
                     document.getElementById('tip').classList.remove('hidden');
+                } else if (!res.ok) {
+                    // Specific error handling for the backend responses
+                    throw new Error(data.error || "Server responded with status " + res.status);
                 }
             } catch (e) {
-                alert("Security Error. Please turn off your DNS.");
+                console.error(e);
+                alert("Security Error: " + e.message);
                 btn.disabled = false;
                 btn.innerHTML = '<span>INITIALIZE LINK</span>';
             }
@@ -161,43 +170,39 @@
         }
 
         async function copyKey() {
-    const key = document.getElementById('keyText').innerText;
-    const btn = event.currentTarget; // Gets the button clicked
-    const originalContent = btn.innerHTML;
+            const key = document.getElementById('keyText').innerText;
+            const btn = event.currentTarget; 
+            const originalContent = btn.innerHTML;
 
-    try {
-        // Primary method: Modern Clipboard API
-        if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(key);
-        } else {
-            // Fallback method: ExecCommand
-            const textArea = document.createElement("textarea");
-            textArea.value = key;
-            textArea.style.position = "fixed";
-            textArea.style.left = "-9999px";
-            textArea.style.top = "0";
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            document.execCommand('copy');
-            textArea.remove();
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(key);
+                } else {
+                    const textArea = document.createElement("textarea");
+                    textArea.value = key;
+                    textArea.style.position = "fixed";
+                    textArea.style.left = "-9999px";
+                    textArea.style.top = "0";
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    document.execCommand('copy');
+                    textArea.remove();
+                }
+
+                btn.innerHTML = '<i class="fa-solid fa-check"></i><span>COPIED!</span>';
+                btn.classList.replace('bg-emerald-600', 'bg-blue-600');
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalContent;
+                    btn.classList.replace('bg-blue-600', 'bg-emerald-600');
+                }, 2000);
+
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+                alert("Manual copy required: " + key);
+            }
         }
-
-        // Visual Feedback (Better than alert)
-        btn.innerHTML = '<i class="fa-solid fa-check"></i><span>COPIED!</span>';
-        btn.classList.replace('bg-emerald-600', 'bg-blue-600');
-        
-        setTimeout(() => {
-            btn.innerHTML = originalContent;
-            btn.classList.replace('bg-blue-600', 'bg-emerald-600');
-        }, 2000);
-
-    } catch (err) {
-        console.error('Failed to copy: ', err);
-        alert("Manual copy required: " + key);
-    }
-}
-
     </script>
 </body>
 </html>
