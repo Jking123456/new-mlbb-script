@@ -11,54 +11,55 @@ export default async function handler(req, res) {
 
     if (!key || !hwid || !size) return res.status(400).send("ERR_MISSING_PARAMS");
 
-    // 1. ANTI-TAMPER: FILE SIZE CHECK
+    // 1. SIZE CHECK
     const EXPECTED_SIZE = "66292"; 
     if (String(size) !== EXPECTED_SIZE) {
       return res.status(403).send("ERR_SIZE_MISMATCH_" + size);
     }
 
-    // 2. RETRIEVE LICENSE FROM REDIS
-    let keyData = await redis.get(key);
+    // 2. REDIS CHECK
+    let keyData;
+    try {
+        keyData = await redis.get(key);
+    } catch (e) {
+        return res.status(500).send("ERR_REDIS_CONNECTION");
+    }
+
     if (!keyData) return res.status(403).send("ERR_KEY_NOT_FOUND");
 
-    // Ensure data is an object
+    // Auto-parse if string
     if (typeof keyData === 'string') {
       try { keyData = JSON.parse(keyData); } catch (e) { return res.status(500).send("ERR_JSON_PARSE"); }
     }
 
-    // 3. HWID LOCKING SYSTEM
+    // 3. HWID LOCK
     const isRegistered = await redis.sismember(`hwids:${key}`, hwid);
-    
     if (!isRegistered) {
       const currentDevices = await redis.scard(`hwids:${key}`);
-      const limit = parseInt(keyData.limit) || 1;
-
-      if (currentDevices >= limit) {
+      if (currentDevices >= (parseInt(keyData.limit) || 1)) {
         return res.status(403).send("ERR_HWID_LIMIT");
       }
-      // Add the new device to the allowed list for this key
       await redis.sadd(`hwids:${key}`, hwid);
     }
 
-    // 4. THE FIX: ACTIVATE TIMER ON FIRST USE
-    // This part triggers the countdown in your Dashboard
+    // --- NEW: ACTIVATION & EXPIRATION LOGIC ---
+    // If the key is used for the first time, start the real countdown
     if (keyData.activated === false) {
-      const duration = parseInt(keyData.duration) || 86400; // default to 24h
+      const duration = parseInt(keyData.duration) || 86400; // Default to 24h
       
       keyData.activated = true;
       keyData.activatedAt = Date.now();
-      // We update 'remaining' to 'Active' so the dashboard knows it's running
-      keyData.remaining = "Calculating..."; 
-
-      // Save the 'Activated' status
+      
+      // Update the key data in Redis to mark it as active
       await redis.set(key, JSON.stringify(keyData));
       
-      // SET ACTUAL DATABASE EXPIRATION (This makes it count down)
+      // Set the actual expiration in the Redis database
+      // This makes the key (and its HWID list) delete itself after the duration
       await redis.expire(key, duration);
       await redis.expire(`hwids:${key}`, duration);
     }
 
-    // 5. FETCH SCRIPT FROM GITHUB
+    // 4. GITHUB FETCH
     const scriptName = keyData.isPremium ? "kupalka.lua" : "main2.lua";
     const githubUrl = `https://raw.githubusercontent.com/Jking123456/mlbb-maphack-drone/main/${scriptName}`;
     
@@ -69,11 +70,11 @@ export default async function handler(req, res) {
       }
     });
 
-    if (!githubResponse.ok) return res.status(403).send("ERR_GITHUB_FETCH_FAILED");
+    if (!githubResponse.ok) {
+      return res.status(403).send("ERR_GITHUB_AUTH_" + githubResponse.status);
+    }
 
     const scriptContent = await githubResponse.text();
-    
-    // Return the Lua script to Game Guardian
     res.setHeader('Content-Type', 'text/plain');
     return res.status(200).send(scriptContent);
 
