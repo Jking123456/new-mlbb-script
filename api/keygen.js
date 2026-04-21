@@ -6,80 +6,95 @@ const redis = new Redis({
 })
 
 export default async function handler(req, res) {
-  // --- 1. HANDLE WEBSITE REQUEST (POST) ---
-  // This is what fixes the "Security Error" on your keygen.html
+  
+  // --- 1. WEBSITE GENERATOR LOGIC (POST) ---
+  // This handles the request from keygen.html
   if (req.method === 'POST') {
     try {
       const { deviceId } = req.body;
-      if (!deviceId) return res.status(400).json({ error: "MISSING_DEVICE_ID" });
+      if (!deviceId) return res.status(400).json({ error: "Missing Device Fingerprint" });
 
-      // Check if this device already has a key locked to it
+      // Check if this device already has an active key
       const existingKey = await redis.get(`device_lock:${deviceId}`);
-      
       if (existingKey) {
         return res.status(403).json({ 
-            error: "Key already exists for this device.",
-            pendingKey: existingKey 
+          error: "Existing key found for this device!",
+          pendingKey: existingKey 
         });
       }
 
-      // Generate a temporary session token for the shortlink
-      const tempToken = Math.random().toString(36).substring(2, 15);
-      await redis.set(`temp_${tempToken}`, { deviceId }, { ex: 600 }); // 10 min expiry
+      // Create a temporary session for the shortlink
+      const tempToken = Math.random().toString(36).substring(2, 12);
+      // Store temporary session for 10 minutes (600 seconds)
+      await redis.set(`temp_${tempToken}`, { deviceId }, { ex: 600 });
 
-      // Your Shortlink Logic (Replace with your actual provider URL)
+      // Destination URL after shortlink is finished
       const destination = `https://new-mlbb-script.vercel.app/keygen.html?token=${tempToken}`;
+      
+      // Replace YOUR_API_KEY with your actual Carapedi/Shortlink API key
       const shortlink = `https://carapedi.id/api?api=YOUR_API_KEY&url=${encodeURIComponent(destination)}`;
 
       return res.status(200).json({ shortlink });
+
     } catch (error) {
-      return res.status(500).json({ error: "GENERATOR_CRASH" });
+      console.error("POST Error:", error);
+      return res.status(500).json({ error: "Generator System Error" });
     }
   }
 
-  // --- 2. HANDLE SCRIPT REQUEST (GET) ---
-  // This is what the Game Guardian script calls
+  // --- 2. SCRIPT ACCESS LOGIC (GET) ---
+  // This handles the request from Game Guardian / Client
   if (req.method === 'GET') {
     try {
       const { key, hwid, size } = req.query;
 
-      if (!key || !hwid || !size) return res.status(400).send("ERR_MISSING_PARAMS");
+      if (!key || !hwid) return res.status(400).send("ERR_MISSING_PARAMS");
 
-      // Anti-Tamper Size Check
+      // Optional: Anti-Tamper Size Check
       const EXPECTED_SIZE = "66292"; 
-      if (String(size) !== EXPECTED_SIZE) {
-        return res.status(403).send("ERR_SIZE_MISMATCH_" + size);
+      if (size && String(size) !== EXPECTED_SIZE) {
+        return res.status(403).send("ERR_SIZE_MISMATCH");
       }
 
+      // Fetch key data from Redis
       let keyData = await redis.get(key);
       if (!keyData) return res.status(403).send("ERR_KEY_NOT_FOUND");
 
+      // Convert to object if stored as string
       if (typeof keyData === 'string') {
         try { keyData = JSON.parse(keyData); } catch (e) { return res.status(500).send("ERR_JSON_PARSE"); }
       }
 
-      // HWID Lock Logic
+      // HWID Registration & Lock
       const isRegistered = await redis.sismember(`hwids:${key}`, hwid);
       if (!isRegistered) {
         const currentDevices = await redis.scard(`hwids:${key}`);
-        if (currentDevices >= (parseInt(keyData.limit) || 1)) {
+        const limit = parseInt(keyData.limit) || 1;
+
+        if (currentDevices >= limit) {
           return res.status(403).send("ERR_HWID_LIMIT");
         }
         await redis.sadd(`hwids:${key}`, hwid);
       }
 
-      // EXPIRATION FIX: Start timer on first use
+      // THE EXPIRATION FIX:
+      // If 'activated' is false, this is the user's first time using the key.
+      // We start the actual countdown in the database now.
       if (keyData.activated === false) {
-        const duration = parseInt(keyData.duration) || 86400;
+        const duration = parseInt(keyData.duration) || 86400; // Default 24h
+        
         keyData.activated = true;
         keyData.activatedAt = Date.now();
         
+        // Save the updated "Activated" status
         await redis.set(key, JSON.stringify(keyData));
+        
+        // Tell Redis to delete the key and its HWID list when time is up
         await redis.expire(key, duration);
         await redis.expire(`hwids:${key}`, duration);
       }
 
-      // Fetch Script from Github
+      // Fetch the script content from GitHub
       const scriptName = keyData.isPremium ? "kupalka.lua" : "main2.lua";
       const githubUrl = `https://raw.githubusercontent.com/Jking123456/mlbb-maphack-drone/main/${scriptName}`;
       
@@ -90,14 +105,20 @@ export default async function handler(req, res) {
         }
       });
 
-      if (!githubResponse.ok) return res.status(403).send("ERR_GITHUB_AUTH");
+      if (!githubResponse.ok) return res.status(403).send("ERR_GITHUB_FETCH");
 
       const scriptContent = await githubResponse.text();
+      
       res.setHeader('Content-Type', 'text/plain');
       return res.status(200).send(scriptContent);
 
     } catch (error) {
+      console.error("GET Error:", error);
       return res.status(500).send("ERR_SERVER_CRASH");
     }
   }
-}
+  
+  // If method is neither POST nor GET
+  return res.status(405).send("Method Not Allowed");
+    }
+      
