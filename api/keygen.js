@@ -5,38 +5,7 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN,
 })
 
-// Your specific ShrinkMe Token applied here
-const SHRINKME_API_KEY = "1de83a40a7f0f1ec1c3a7bce28d9b9af26e399fd"; 
-
 export default async function handler(req, res) {
-  
-  // --- PART 1: WEBSITE LOGIC (Handle POST from keygen.html) ---
-  if (req.method === 'POST') {
-    try {
-      const { deviceId } = req.body;
-      if (!deviceId) return res.status(400).json({ error: "MISSING_ID" });
-
-      // Check Redis for active session to prevent spam
-      const activeKey = await redis.get(`active_key:${deviceId}`);
-      if (activeKey) {
-        return res.status(403).json({ pendingKey: activeKey, error: "ALREADY_HAS_KEY" });
-      }
-
-      // Generate the URL that the user returns to after the ads
-      const host = req.headers.host;
-      const protocol = host.includes('localhost') ? 'http' : 'https';
-      const destinationUrl = `${protocol}://${host}/keygen.html?token=${deviceId}`;
-      
-      // Construct the final ShrinkMe API link
-      const shortlink = `https://shrinkme.io/st?api=${SHRINKME_API_KEY}&url=${encodeURIComponent(destinationUrl)}`;
-
-      return res.status(200).json({ success: true, shortlink: shortlink });
-    } catch (e) {
-      return res.status(500).json({ error: "WEBSITE_API_CRASH" });
-    }
-  }
-
-  // --- PART 2: SCRIPT DOWNLOADER (Handle GET from Game/Injector) ---
   try {
     const { key, hwid, size } = req.query;
 
@@ -49,9 +18,16 @@ export default async function handler(req, res) {
     }
 
     // 2. REDIS CHECK
-    let keyData = await redis.get(key);
+    let keyData;
+    try {
+        keyData = await redis.get(key);
+    } catch (e) {
+        return res.status(500).send("ERR_REDIS_CONNECTION");
+    }
+
     if (!keyData) return res.status(403).send("ERR_KEY_NOT_FOUND");
 
+    // Auto-parse if string
     if (typeof keyData === 'string') {
       try { keyData = JSON.parse(keyData); } catch (e) { return res.status(500).send("ERR_JSON_PARSE"); }
     }
@@ -88,4 +64,5 @@ export default async function handler(req, res) {
   } catch (error) {
     return res.status(500).send("ERR_SERVER_CRASH");
   }
-    }
+  }
+      
