@@ -5,57 +5,85 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN,
 })
 
+// Replace with your actual ShrinkMe API Key
+const SHRINKME_API_KEY = "YOUR_SHRINKME_API_KEY_HERE"; 
+
 export default async function handler(req, res) {
-  // 1. Ensure the request is a POST (matching your keygen.html)
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', ['POST']);
-    return res.status(405).end(`Method ${req.method} Not Allowed`);
+  
+  // --- PART 1: WEBSITE LOGIC (Handle POST from keygen.html) ---
+  if (req.method === 'POST') {
+    try {
+      const { deviceId } = req.body;
+      if (!deviceId) return res.status(400).json({ error: "MISSING_ID" });
+
+      // Check if they already have an active key to prevent double-skipping
+      const activeKey = await redis.get(`active_key:${deviceId}`);
+      if (activeKey) {
+        return res.status(403).json({ pendingKey: activeKey, error: "ALREADY_HAS_KEY" });
+      }
+
+      // Generate the ShrinkMe URL
+      const host = req.headers.host;
+      const destinationUrl = `https://${host}/keygen.html?token=${deviceId}`;
+      const shortlink = `https://shrinkme.io/st?api=${SHRINKME_API_KEY}&url=${encodeURIComponent(destinationUrl)}`;
+
+      return res.status(200).json({ success: true, shortlink: shortlink });
+    } catch (e) {
+      return res.status(500).json({ error: "WEBSITE_API_CRASH" });
+    }
   }
 
+  // --- PART 2: SCRIPT DOWNLOADER (Handle GET from the Game/Injector) ---
   try {
-    const { deviceId } = req.body;
+    const { key, hwid, size } = req.query;
 
-    // Validation: Check if deviceId was sent
-    if (!deviceId) {
-      return res.status(400).json({ success: false, error: "MISSING_DEVICE_ID" });
+    if (!key || !hwid || !size) return res.status(400).send("ERR_MISSING_PARAMS");
+
+    // 1. SIZE CHECK (Prevents tampering)
+    const EXPECTED_SIZE = "66292"; 
+    if (String(size) !== EXPECTED_SIZE) {
+      return res.status(403).send("ERR_SIZE_MISMATCH_" + size);
     }
 
-    // 2. Security Check: See if this device already has a pending key/session
-    // This prevents users from spamming key generation
-    const existingSession = await redis.get(`session:${deviceId}`);
-    
-    if (existingSession) {
-      // If you want to return an existing key instead of a new link
-      return res.status(403).json({ 
-        success: false, 
-        pendingKey: existingSession,
-        error: "EXISTING_KEY_FOUND" 
-      });
+    // 2. REDIS CHECK
+    let keyData = await redis.get(key);
+    if (!keyData) return res.status(403).send("ERR_KEY_NOT_FOUND");
+
+    if (typeof keyData === 'string') {
+      try { keyData = JSON.parse(keyData); } catch (e) { return res.status(500).send("ERR_JSON_PARSE"); }
     }
 
-    /**
-     * 3. Logic for Shortlink Generation
-     * Replace the 'dest' URL with your actual verification claim endpoint.
-     * The 'shortlink' should point to your monetization service (like AdLinkFly, LootLabs, etc.)
-     */
-    const destinationUrl = `https://${req.headers.host}/keygen.html?token=${deviceId}`;
+    // 3. HWID LOCK
+    const isRegistered = await redis.sismember(`hwids:${key}`, hwid);
+    if (!isRegistered) {
+      const currentDevices = await redis.scard(`hwids:${key}`);
+      if (currentDevices >= (parseInt(keyData.limit) || 1)) {
+        return res.status(403).send("ERR_HWID_LIMIT");
+      }
+      await redis.sadd(`hwids:${key}`, hwid);
+    }
+
+    // 4. GITHUB FETCH (Download the actual .lua script)
+    const scriptName = keyData.isPremium ? "kupalka.lua" : "main2.lua";
+    const githubUrl = `https://raw.githubusercontent.com/Jking123456/mlbb-maphack-drone/main/${scriptName}`;
     
-    // Example: Replace this with your actual shortener API call if needed
-    // For now, we return a mock shortlink or the direct destination for testing
-    const generatedShortlink = `https://your-shortener-service.com/st?api=YOUR_API_KEY&url=${encodeURIComponent(destinationUrl)}`;
-
-    // 4. (Optional) Save a temporary state in Redis to track the attempt
-    await redis.set(`attempt:${deviceId}`, "pending", { ex: 3600 }); // Expires in 1 hour
-
-    // 5. Success Response
-    return res.status(200).json({
-      success: true,
-      shortlink: generatedShortlink // This is what the frontend button needs
+    const githubResponse = await fetch(githubUrl, {
+      headers: {
+        'Authorization': `token ${process.env.GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3.raw'
+      }
     });
 
+    if (!githubResponse.ok) {
+      return res.status(403).send("ERR_GITHUB_AUTH_" + githubResponse.status);
+    }
+
+    const scriptContent = await githubResponse.text();
+    res.setHeader('Content-Type', 'text/plain');
+    return res.status(200).send(scriptContent);
+
   } catch (error) {
-    console.error("API Error:", error);
-    // This triggers the "Security Error. Please turn off your DNS" in your HTML catch block
-    return res.status(500).json({ success: false, error: "ERR_SERVER_CRASH" });
+    console.error(error);
+    return res.status(500).send("ERR_SERVER_CRASH");
   }
 }
