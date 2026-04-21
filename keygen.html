@@ -3,201 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PRINZVAN ULTIMATE | KEY GENERATOR</title>
+    <title>Temporarily Unavailable | Prinzvan Official</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script>
-        const fpPromise = import('https://openfpcdn.io/fingerprintjs/v4').then(FingerprintJS => FingerprintJS.load());
-    </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
-        :root { --primary: #3b82f6; --accent: #10b981; --bg-dark: #05070a; }
-        body { background-color: var(--bg-dark); background-image: radial-gradient(circle at 0% 0%, rgba(59, 130, 246, 0.15) 0%, transparent 25%), radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.1) 0%, transparent 25%); color: #f8fafc; font-family: 'Plus Jakarta Sans', sans-serif; min-height: 100vh; overflow-x: hidden; display: flex; align-items: center; justify-content: center; }
-        .glass-card { background: rgba(13, 17, 23, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-        .btn-premium { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .btn-premium:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(37, 99, 235, 0.5); filter: brightness(1.1); }
-        .key-display { font-family: 'JetBrains Mono', monospace; background: rgba(0, 0, 0, 0.3); border: 1px dashed rgba(59, 130, 246, 0.4); letter-spacing: 0.15em; }
-        .shimmer { background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent); background-size: 200% 100%; animation: shimmer 2s infinite; }
-        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .animated-bg {
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
     </style>
 </head>
-<body class="p-4">
+<body class="animated-bg min-h-screen flex flex-col items-center justify-center font-sans p-6">
 
-    <div class="w-full max-w-[440px] fade-in">
-        <div class="text-center mb-8">
-            <h2 class="text-xs font-black tracking-[0.3em] text-blue-500 uppercase mb-2">System Access</h2>
-            <h1 class="text-3xl font-extrabold tracking-tight">PRINZVAN<span class="text-blue-500">ULTIMATE</span></h1>
-        </div>
-
-        <div class="glass-card rounded-[40px] p-8 md:p-10 relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-1 shimmer"></div>
-
-            <div id="statusIcon" class="w-24 h-24 bg-blue-500/10 rounded-3xl flex items-center justify-center mx-auto mb-8 transition-all duration-500">
-                <i class="fa-solid fa-microchip text-4xl text-blue-500"></i>
-            </div>
-
-            <div class="text-center space-y-2 mb-10">
-                <h2 id="title" class="text-2xl font-bold tracking-tight">License Generator</h2>
-                <p id="description" class="text-slate-400 text-sm leading-relaxed">Verify your session via the secure shortlink to obtain your 24h access key.</p>
-            </div>
-
-            <div id="generateSection" class="space-y-6">
-                <div class="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-3">
-                    <div class="flex items-center gap-3 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-                        <i class="fa-solid fa-shield-halved text-blue-500"></i>
-                        <span>Security Protocol</span>
-                    </div>
-                    <ul class="text-xs text-slate-400 space-y-2">
-                        <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-[10px] text-emerald-500"></i> Device ID (Fingerprint) Locked</li>
-                        <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-[10px] text-emerald-500"></i> Anti-Bypass & Canary Defense</li>
-                    </ul>
-                </div>
-
-                <button onclick="handleFlow()" id="mainBtn" class="w-full btn-premium text-white font-bold py-5 rounded-2xl flex items-center justify-center gap-3 group">
-                    <span>INITIALIZE LINK</span>
-                    <i class="fa-solid fa-arrow-right text-sm group-hover:translate-x-1 transition-transform"></i>
-                </button>
-                <p id="tip" class="text-[10px] text-blue-400 text-center font-bold hidden animate-pulse uppercase tracking-widest">Link ready! Click again to proceed</p>
-            </div>
-
-            <div id="successSection" class="hidden space-y-8 fade-in">
-                <div class="key-display p-6 rounded-2xl text-center shadow-inner relative">
-                    <span id="keyText" class="text-xl md:text-2xl text-white font-medium">-------</span>
-                    <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-tighter">Your Key</div>
-                </div>
-                <div class="space-y-3">
-                    <button onclick="copyKey()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-5 rounded-2xl transition-all shadow-lg flex items-center justify-center gap-3">
-                        <i class="fa-solid fa-copy"></i><span>COPY TO CLIPBOARD</span>
-                    </button>
-                    <p class="text-[10px] text-amber-500 text-center font-bold uppercase tracking-wider animate-pulse">⚠️ DO NOT REFRESH. Copy now.</p>
-                </div>
+    <main class="glass max-w-lg w-full rounded-3xl shadow-2xl p-10 text-center transform transition-all hover:scale-[1.01]">
+        <div class="mb-6 flex justify-center">
+            <div class="bg-gray-100 p-4 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
             </div>
         </div>
 
-        <div class="mt-10 text-center">
-            <p class="text-[11px] text-slate-500 font-medium uppercase tracking-[0.4em]">Protected by Prinzvan Auth v4.0</p>
-        </div>
-    </div>
-
-    <script>
-        let readyLink = "";
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlToken = urlParams.get('token');
-
-        function demask(payload) {
-            try { return atob(payload.split('').reverse().join('')); } catch (e) { return "ERROR"; }
-        }
-
-        window.onload = async () => {
-            if (urlToken) {
-                window.history.replaceState({}, document.title, window.location.pathname);
-                document.getElementById('generateSection').classList.add('hidden');
-                document.getElementById('title').innerText = "Authenticating...";
-
-                try {
-                    const res = await fetch(`/api/verify-claim?token=${urlToken}`);
-                    const data = await res.json();
-                    if (data.success) {
-                        showSuccessMode(demask(data.payload));
-                    } else {
-                        alert(data.error || "Session Expired.");
-                        window.location.replace('/keygen.html');
-                    }
-                } catch (e) { window.location.replace('/keygen.html'); }
-            }
-        };
-
-        async function handleFlow() {
-            const btn = document.getElementById('mainBtn');
-            if (readyLink) { window.location.href = readyLink; return; }
-
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> <span>IDENTIFYING DEVICE...</span>';
-
-            try {
-                // 1. Get Unique Device Fingerprint
-                const fp = await fpPromise;
-                const result = await fp.get();
-                const visitorId = result.visitorId;
-
-                // 2. Send to API
-                const res = await fetch('/api/keygen', { 
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ deviceId: visitorId })
-                });
-                
-                const data = await res.json();
-
-                if (res.status === 403 && data.pendingKey) {
-                    alert("Existing key found for this device! Redirecting...");
-                    window.location.href = `/keygen.html?token=RECOVER&key=${data.pendingKey}`;
-                    return;
-                }
-
-                if (data.shortlink) {
-                    readyLink = data.shortlink;
-                    btn.disabled = false;
-                    btn.innerHTML = '<span>OPEN SHORTLINK</span>';
-                    btn.classList.replace('btn-premium', 'bg-blue-600');
-                    document.getElementById('tip').classList.remove('hidden');
-                }
-            } catch (e) {
-                alert("Security Error. Please turn off your DNS.");
-                btn.disabled = false;
-                btn.innerHTML = '<span>INITIALIZE LINK</span>';
-            }
-        }
-
-        function showSuccessMode(key) {
-            document.getElementById('generateSection').classList.add('hidden');
-            document.getElementById('successSection').classList.remove('hidden');
-            document.getElementById('statusIcon').innerHTML = '<i class="fa-solid fa-user-shield text-4xl text-emerald-500"></i>';
-            document.getElementById('statusIcon').className = "w-24 h-24 bg-emerald-500/10 rounded-3xl flex items-center justify-center mx-auto mb-8 scale-110";
-            document.getElementById('title').innerText = "Access Granted";
-            document.getElementById('keyText').innerText = key;
-        }
-
-        async function copyKey() {
-    const key = document.getElementById('keyText').innerText;
-    const btn = event.currentTarget; // Gets the button clicked
-    const originalContent = btn.innerHTML;
-
-    try {
-        // Primary method: Modern Clipboard API
-        if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(key);
-        } else {
-            // Fallback method: ExecCommand
-            const textArea = document.createElement("textarea");
-            textArea.value = key;
-            textArea.style.position = "fixed";
-            textArea.style.left = "-9999px";
-            textArea.style.top = "0";
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            document.execCommand('copy');
-            textArea.remove();
-        }
-
-        // Visual Feedback (Better than alert)
-        btn.innerHTML = '<i class="fa-solid fa-check"></i><span>COPIED!</span>';
-        btn.classList.replace('bg-emerald-600', 'bg-blue-600');
+        <h1 class="text-3xl font-extrabold text-gray-800 mb-4 tracking-tight">
+            Temporarily Unavailable
+        </h1>
         
-        setTimeout(() => {
-            btn.innerHTML = originalContent;
-            btn.classList.replace('bg-blue-600', 'bg-emerald-600');
-        }, 2000);
+        <p class="text-gray-600 leading-relaxed mb-8">
+            We are currently performing scheduled maintenance to improve our services. 
+            <span class="font-semibold text-gray-800">Prinzvan Official</span> will be back online shortly. 
+            We appreciate your patience!
+        </p>
 
-    } catch (err) {
-        console.error('Failed to copy: ', err);
-        alert("Manual copy required: " + key);
-    }
-}
+        <div class="w-full bg-gray-200 rounded-full h-1.5 mb-8">
+            <div class="bg-blue-500 h-1.5 rounded-full" style="width: 75%"></div>
+        </div>
 
-    </script>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="mailto:support@prinzvan.com" class="px-6 py-2 bg-gray-800 text-white rounded-lg font-medium hover:bg-black transition-colors">
+                Contact Support
+            </a>
+            <button onclick="window.location.reload()" class="px-6 py-2 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+                Check Again
+            </button>
+        </div>
+    </main>
+
+    <footer class="mt-12 text-white text-sm font-light tracking-widest opacity-90">
+        &copy; Prinzvan Official 2026
+    </footer>
+
 </body>
 </html>
