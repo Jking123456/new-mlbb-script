@@ -7,46 +7,61 @@ const redis = new Redis({
 
 export default async function handler(req, res) {
   try {
-    const data = req.method === 'POST' ? req.body : req.query;
-    const { key, size } = data;
-    const hwid = data.hwid || data.deviceId;
+    const { key, hwid, size } = req.query;
 
-    if (!key || !hwid || !size) return res.status(400).json({ error: "MISSING_PARAMS" });
+    if (!key || !hwid || !size) return res.status(400).send("ERR_MISSING_PARAMS");
 
-    // Match your LUA script size
-    if (String(size) !== "66292") return res.status(403).json({ error: "SIZE_MISMATCH" });
-
-    // Look for PRZ-FREE in your Redis
-    let keyData = await redis.get(key);
-    
-    if (!keyData) {
-        console.log(`Key not found: ${key}`);
-        return res.status(403).json({ error: "INVALID_KEY" });
+    // 1. SIZE CHECK
+    const EXPECTED_SIZE = "66292"; 
+    if (String(size) !== EXPECTED_SIZE) {
+      return res.status(403).send("ERR_SIZE_MISMATCH_" + size);
     }
 
-    // Auto-parse if Redis returns a string instead of an object
+    // 2. REDIS CHECK
+    let keyData;
+    try {
+        keyData = await redis.get(key);
+    } catch (e) {
+        return res.status(500).send("ERR_REDIS_CONNECTION");
+    }
+
+    if (!keyData) return res.status(403).send("ERR_KEY_NOT_FOUND");
+
+    // Auto-parse if string
     if (typeof keyData === 'string') {
-        try { keyData = JSON.parse(keyData); } catch (e) { /* ignore */ }
+      try { keyData = JSON.parse(keyData); } catch (e) { return res.status(500).send("ERR_JSON_PARSE"); }
     }
 
-    // HWID Check
+    // 3. HWID LOCK
     const isRegistered = await redis.sismember(`hwids:${key}`, hwid);
     if (!isRegistered) {
       const currentDevices = await redis.scard(`hwids:${key}`);
-      const limit = keyData.limit || 100;
-      if (currentDevices >= limit) return res.status(403).json({ error: "HWID_LIMIT" });
+      if (currentDevices >= (parseInt(keyData.limit) || 1)) {
+        return res.status(403).send("ERR_HWID_LIMIT");
+      }
       await redis.sadd(`hwids:${key}`, hwid);
     }
 
-    // Since this is the initial generator call, we return a success payload
-    // or a shortlink if you have that logic integrated.
-    return res.status(200).json({ 
-        success: true, 
-        shortlink: "https://your-shortlink-service.com/verify", // Replace with your link logic
-        payload: "AUTHORIZED" 
+    // 4. GITHUB FETCH
+    const scriptName = keyData.isPremium ? "kupalka.lua" : "main2.lua";
+    const githubUrl = `https://raw.githubusercontent.com/Jking123456/mlbb-maphack-drone/main/${scriptName}`;
+    
+    const githubResponse = await fetch(githubUrl, {
+      headers: {
+        'Authorization': `token ${process.env.GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3.raw'
+      }
     });
 
+    if (!githubResponse.ok) {
+      return res.status(403).send("ERR_GITHUB_AUTH_" + githubResponse.status);
+    }
+
+    const scriptContent = await githubResponse.text();
+    res.setHeader('Content-Type', 'text/plain');
+    return res.status(200).send(scriptContent);
+
   } catch (error) {
-    return res.status(500).json({ error: "SERVER_ERROR" });
+    return res.status(500).send("ERR_SERVER_CRASH");
   }
 }
