@@ -17,7 +17,7 @@ export default async function handler(req, res) {
   if (!token) return res.status(400).json({ error: "Missing Token" });
 
   try {
-    // 1. Get the temp token data
+    // 1. Get the temp token data (which has the deviceId from keygen)
     const tempData = await redis.get(`temp_${token}`);
     if (!tempData || !tempData.deviceId) {
         return res.status(403).json({ error: "Contact the Admin to retrieve your Key" });
@@ -28,21 +28,16 @@ export default async function handler(req, res) {
     // 2. Generate the FINAL PRZ Key
     const finalKey = "PRZ-FREE-" + Math.random().toString(36).substring(2, 8).toUpperCase();
     
-    // UPDATED DATA STRUCTURE
-    const keyData = { 
-        activated: false,       // The 'keygen.js' will flip this to true on first use
-        duration: 86400,        // 24 hours in seconds
-        limit: 1,               // Device limit
-        isPremium: true,        // Premium script access
-        deviceId: deviceId,     // Locked to this generator session
-        remaining: "1d 0h",     // Default display for your dashboard
-        createdAt: Date.now()   // Tracking when the key was created
-    };
-
-    // Save the key data to Redis
-    await redis.set(finalKey, JSON.stringify(keyData));
+    // Save the key with activated: false
+    await redis.set(finalKey, { 
+        activated: false, 
+        duration: 86400,
+        isPremium: true,
+        deviceId: deviceId 
+    });
 
     // 3. SET THE PERMANENT DEVICE LOCK
+    // This links this Phone ID to this specific Key Name
     await redis.set(`device_lock:${deviceId}`, finalKey);
     
     // 4. Cleanup: Remove the temporary session token
