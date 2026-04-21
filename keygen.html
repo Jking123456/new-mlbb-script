@@ -83,6 +83,7 @@
 
     <script>
         let readyLink = "";
+        const EXPECTED_SIZE = "66292";
         const urlParams = new URLSearchParams(window.location.search);
         const urlToken = urlParams.get('token');
 
@@ -117,28 +118,25 @@
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> <span>IDENTIFYING DEVICE...</span>';
 
             try {
-                // 1. Get Unique Device Fingerprint
                 const fp = await fpPromise;
                 const result = await fp.get();
                 const visitorId = result.visitorId;
 
-                // 2. Send to API - FIXED: Added required 'key' and 'size' fields
                 const res = await fetch('/api/keygen', { 
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify({ 
                         deviceId: visitorId,
-                        hwid: visitorId,
-                        key: "FREE-ACCESS", // Placeholder key for the initialization step
-                        size: "66292"       // Must match EXPECTED_SIZE in your backend
+                        key: "FREE-ACCESS", 
+                        size: EXPECTED_SIZE 
                     })
                 });
                 
                 const data = await res.json();
 
                 if (res.status === 403 && data.pendingKey) {
-                    alert("Existing key found for this device! Redirecting...");
-                    window.location.href = `/keygen.html?token=RECOVER&key=${data.pendingKey}`;
+                    alert("Existing session found!");
+                    showSuccessMode(data.pendingKey);
                     return;
                 }
 
@@ -148,12 +146,13 @@
                     btn.innerHTML = '<span>OPEN SHORTLINK</span>';
                     btn.classList.replace('btn-premium', 'bg-blue-600');
                     document.getElementById('tip').classList.remove('hidden');
-                } else if (!res.ok) {
-                    // Specific error handling for the backend responses
-                    throw new Error(data.error || "Server responded with status " + res.status);
+                } else if (data.success) {
+                    // Direct success if no shortlink required
+                    showSuccessMode("SESSION_ACTIVE_" + Math.floor(Date.now()/1000));
+                } else {
+                    throw new Error(data.error || "UNKNOWN_ERR");
                 }
             } catch (e) {
-                console.error(e);
                 alert("Security Error: " + e.message);
                 btn.disabled = false;
                 btn.innerHTML = '<span>INITIALIZE LINK</span>';
@@ -171,38 +170,22 @@
 
         async function copyKey() {
             const key = document.getElementById('keyText').innerText;
-            const btn = event.currentTarget; 
+            const btn = event.currentTarget;
             const originalContent = btn.innerHTML;
 
             try {
-                if (navigator.clipboard && window.isSecureContext) {
-                    await navigator.clipboard.writeText(key);
-                } else {
-                    const textArea = document.createElement("textarea");
-                    textArea.value = key;
-                    textArea.style.position = "fixed";
-                    textArea.style.left = "-9999px";
-                    textArea.style.top = "0";
-                    document.body.appendChild(textArea);
-                    textArea.focus();
-                    textArea.select();
-                    document.execCommand('copy');
-                    textArea.remove();
-                }
-
+                await navigator.clipboard.writeText(key);
                 btn.innerHTML = '<i class="fa-solid fa-check"></i><span>COPIED!</span>';
                 btn.classList.replace('bg-emerald-600', 'bg-blue-600');
-                
                 setTimeout(() => {
                     btn.innerHTML = originalContent;
                     btn.classList.replace('bg-blue-600', 'bg-emerald-600');
                 }, 2000);
-
             } catch (err) {
-                console.error('Failed to copy: ', err);
-                alert("Manual copy required: " + key);
+                alert("Manual copy: " + key);
             }
         }
     </script>
 </body>
-</html>
+    </html>
+    
