@@ -7,16 +7,14 @@ const redis = new Redis({
 
 export default async function handler(req, res) {
   try {
-    // Support both POST (body) and GET (query)
+    // Get data from body (POST) or query (GET)
     const data = req.method === 'POST' ? req.body : req.query;
     const { key, size } = data;
-    
-    // Map deviceId from frontend to hwid used in backend logic
     const hwid = data.hwid || data.deviceId;
 
     // 1. VALIDATION
     if (!key || !hwid || !size) {
-      return res.status(400).json({ error: "MISSING_PARAMETERS", required: "key, hwid/deviceId, size" });
+      return res.status(400).json({ error: "MISSING_PARAMS" });
     }
 
     const EXPECTED_SIZE = "66292"; 
@@ -24,26 +22,25 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: "SIZE_MISMATCH" });
     }
 
-    // 2. REDIS KEY CHECK
+    // 2. REDIS CHECK
     let keyData = await redis.get(key);
     if (!keyData) return res.status(403).json({ error: "INVALID_KEY" });
 
     if (typeof keyData === 'string') {
-      try { keyData = JSON.parse(keyData); } catch (e) { return res.status(500).json({ error: "DATABASE_PARSE_ERROR" }); }
+      try { keyData = JSON.parse(keyData); } catch (e) { return res.status(500).json({ error: "DB_PARSE_ERR" }); }
     }
 
-    // 3. HWID LOCKING
+    // 3. HWID LOCK
     const isRegistered = await redis.sismember(`hwids:${key}`, hwid);
     if (!isRegistered) {
       const currentDevices = await redis.scard(`hwids:${key}`);
       if (currentDevices >= (parseInt(keyData.limit) || 1)) {
-        return res.status(403).json({ error: "DEVICE_LIMIT_REACHED" });
+        return res.status(403).json({ error: "HWID_LIMIT" });
       }
       await redis.sadd(`hwids:${key}`, hwid);
     }
 
-    // 4. CONTENT DELIVERY
-    // If this is just a 'check', return success. If it's a script request, return the code.
+    // 4. CONTENT FETCHING
     const scriptName = keyData.isPremium ? "kupalka.lua" : "main2.lua";
     const githubUrl = `https://raw.githubusercontent.com/Jking123456/mlbb-maphack-drone/main/${scriptName}`;
     
@@ -54,21 +51,21 @@ export default async function handler(req, res) {
       }
     });
 
-    if (!githubResponse.ok) return res.status(403).json({ error: "GITHUB_FETCH_FAILED" });
+    if (!githubResponse.ok) return res.status(403).json({ error: "GITHUB_ERR" });
 
     const scriptContent = await githubResponse.text();
-    
-    // Return as JSON if the requester is the web generator, or plain text for the executor
-    if (req.headers['accept']?.includes('application/json')) {
-        return res.status(200).json({ success: true, payload: btoa(scriptContent).split('').reverse().join('') });
+
+    // If request is from the website (JSON), send masked payload. 
+    // If from executor (Plain Text), send raw script.
+    if (req.headers['accept']?.includes('application/json') || req.method === 'POST') {
+      const masked = btoa(scriptContent).split('').reverse().join('');
+      return res.status(200).json({ success: true, payload: masked });
     }
 
     res.setHeader('Content-Type', 'text/plain');
     return res.status(200).send(scriptContent);
 
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "INTERNAL_SERVER_ERROR" });
+    return res.status(500).json({ error: "SERVER_CRASH" });
   }
-      }
-      
+}
